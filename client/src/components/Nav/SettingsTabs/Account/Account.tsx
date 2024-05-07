@@ -30,9 +30,6 @@ function Account({ onCheckedChange }: { onCheckedChange?: (value: boolean) => vo
         <div className="border-b pb-3 last-of-type:border-b-0 dark:border-gray-600">
           <Avatar />
         </div>
-        <div className="border-b pb-3 last-of-type:border-b-0 dark:border-gray-600">
-          <DeleteAccount />
-        </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div>{localize('com_nav_user_name_display')}</div>

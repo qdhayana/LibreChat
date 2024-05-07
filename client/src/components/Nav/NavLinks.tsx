@@ -6,7 +6,7 @@ import { useGetUserBalance, useGetStartupConfig } from 'librechat-data-provider/
 import FilesView from '~/components/Chat/Input/Files/FilesView';
 import { useAuthContext } from '~/hooks/AuthContext';
 import useAvatar from '~/hooks/Messages/useAvatar';
-import { LinkIcon, GearIcon } from '~/components';
+import { LinkIcon, GearIcon, DataIcon } from '~/components';
 import { UserIcon } from '~/components/svg';
 import { useLocalize } from '~/hooks';
 import Settings from './Settings';
@@ -106,6 +106,18 @@ function NavLinks() {
                     />
                   </MenuItem>
                 )}
+                <MenuItem as="div">
+                  <NavLink
+                    svg={() => <DataIcon />}
+                    text="Feedback"
+                    clickHandler={() =>
+                      window.open(
+                        'https://docs.google.com/forms/d/e/1FAIpQLSdSUSRzwAhgyAIxD0TUx9U2skmrOAN_98s0ZEwZgQVEJyZtTw/viewform',
+                        '_blank',
+                      )
+                    }
+                  />
+                </MenuItem>
                 <MenuItem as="div">
                   <NavLink
                     svg={() => <GearIcon className="icon-md" />}
