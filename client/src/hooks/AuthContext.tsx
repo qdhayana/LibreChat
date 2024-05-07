@@ -60,12 +60,15 @@ const AuthContextProvider = ({
 
   const loginUser = useLoginUserMutation();
   const logoutUser = useLogoutUserMutation({
-    onSuccess: () => {
+    onSuccess: ({ message, logoutURL }) => {
       setUserContext({
         token: undefined,
         isAuthenticated: false,
         user: undefined,
-        redirect: '/login',
+        redirect: undefined,
+      });
+      setTimeout(() => {
+        window.location.replace(logoutURL), 144
       });
     },
     onError: (error) => {
