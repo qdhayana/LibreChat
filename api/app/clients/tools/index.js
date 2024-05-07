@@ -16,6 +16,7 @@ const StructuredSD = require('./structured/StableDiffusion');
 const StructuredACS = require('./structured/AzureAISearch');
 const CodeSherpaTools = require('./structured/CodeSherpaTools');
 const GoogleSearchAPI = require('./structured/GoogleSearch');
+const SearchEngine = require('./structured/SearchEngine');
 const StructuredWolfram = require('./structured/Wolfram');
 const TavilySearchResults = require('./structured/TavilySearchResults');
 const TraversaalSearch = require('./structured/TraversaalSearch');
@@ -26,6 +27,7 @@ module.exports = {
   CodeBrew,
   AzureAiSearch,
   GoogleSearchAPI,
+  SearchEngine,
   WolframAlphaAPI,
   OpenAICreateImage,
   StableDiffusionAPI,
