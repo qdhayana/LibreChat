@@ -47,10 +47,10 @@ router.get('/', async function (req, res) {
       githubLoginEnabled: !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET,
       googleLoginEnabled: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET,
       appleLoginEnabled:
-          !!process.env.APPLE_CLIENT_ID &&
-          !!process.env.APPLE_TEAM_ID &&
-          !!process.env.APPLE_KEY_ID &&
-          !!process.env.APPLE_PRIVATE_KEY_PATH,
+        !!process.env.APPLE_CLIENT_ID &&
+        !!process.env.APPLE_TEAM_ID &&
+        !!process.env.APPLE_KEY_ID &&
+        !!process.env.APPLE_PRIVATE_KEY_PATH,
       openidLoginEnabled:
         !!process.env.OPENID_CLIENT_ID &&
         !!process.env.OPENID_CLIENT_SECRET &&
@@ -74,6 +74,8 @@ router.get('/', async function (req, res) {
         isEnabled(process.env.SHOW_BIRTHDAY_ICON) ||
         process.env.SHOW_BIRTHDAY_ICON === '',
       helpAndFaqURL: process.env.HELP_AND_FAQ_URL || 'https://librechat.ai',
+      feedbackURL: process.env.FEEDBACK_URL,
+      trainingURL: process.env.TRAINING_URL,
       interface: req.app.locals.interfaceConfig,
       modelSpecs: req.app.locals.modelSpecs,
       sharedLinksEnabled,
