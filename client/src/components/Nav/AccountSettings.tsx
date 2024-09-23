@@ -3,7 +3,7 @@ import * as Select from '@ariakit/react/select';
 import { Fragment, useState, memo } from 'react';
 import { FileText, LogOut } from 'lucide-react';
 import { useGetUserBalance, useGetStartupConfig } from 'librechat-data-provider/react-query';
-import { LinkIcon, GearIcon, DropdownMenuSeparator } from '~/components';
+import { LinkIcon, GearIcon, DropdownMenuSeparator, DataIcon, ExperimentIcon } from '~/components';
 import FilesView from '~/components/Chat/Input/Files/FilesView';
 import { useAuthContext } from '~/hooks/AuthContext';
 import useAvatar from '~/hooks/Messages/useAvatar';
@@ -103,6 +103,32 @@ function AccountSettings() {
             {localize('com_nav_help_faq')}
           </Select.SelectItem>
         )}
+        <Select.SelectItem
+          value=""
+          onClick={() =>
+            window.open(
+              'https://docs.google.com/forms/d/e/1FAIpQLSdSUSRzwAhgyAIxD0TUx9U2skmrOAN_98s0ZEwZgQVEJyZtTw/viewform',
+              '_blank',
+            )
+          }
+          className="select-item text-sm"
+        >
+          <DataIcon aria-hidden="true" />
+          Feedback
+        </Select.SelectItem>
+        <Select.SelectItem
+          value=""
+          onClick={() =>
+            window.open(
+              'https://drive.google.com/drive/folders/1KB_uS2woaYF2CNzp4VaqNAlhyKg1HUup',
+              '_blank',
+            )
+          }
+          className="select-item text-sm"
+        >
+          <ExperimentIcon aria-hidden="true" />
+          Training
+        </Select.SelectItem>
         <Select.SelectItem
           value=""
           onClick={() => setShowSettings(true)}
