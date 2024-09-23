@@ -7,6 +7,9 @@ const {
   availableTools,
   // Basic Tools
   GoogleSearchAPI,
+  WolframAlphaAPI,
+  OpenAICreateImage,
+  StableDiffusionAPI,
   // Structured Tools
   DALLE3,
   StructuredSD,
@@ -151,9 +154,11 @@ const loadTools = async ({
   const toolConstructors = {
     calculator: Calculator,
     google: GoogleSearchAPI,
-    wolfram: StructuredWolfram,
-    'stable-diffusion': StructuredSD,
-    'azure-ai-search': StructuredACS,
+    wolfram: functions ? StructuredWolfram : WolframAlphaAPI,
+    'dall-e': OpenAICreateImage,
+    'stable-diffusion': functions ? StructuredSD : StableDiffusionAPI,
+    'azure-ai-search': functions ? StructuredACS : AzureAISearch,
+    CodeBrew: CodeBrew,
     traversaal_search: TraversaalSearch,
     tavily_search_results_json: TavilySearchResults,
   };
