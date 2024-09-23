@@ -1,5 +1,12 @@
 [
   {
+    "name": "DuckDuckGo Search",
+    "pluginKey": "search-engine",
+    "description": "DuckDuckGo search engine",
+    "icon": "https://duckduckgo.com/duckduckgo-help-pages/favicon.ico",
+    "authConfig": []
+  },
+  {
     "name": "Traversaal",
     "pluginKey": "traversaal_search",
     "description": "Traversaal is a robust search API tailored for LLM Agents. Get an API key here: https://api.traversaal.ai",
