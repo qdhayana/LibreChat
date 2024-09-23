@@ -530,6 +530,9 @@ class OpenAIClient extends BaseClient {
     let result = null;
     let streamResult = null;
     this.modelOptions.user = this.user;
+    if (this.sender == 'AYANA AI') {
+      this.modelOptions.user = this.user + '-' + this.conversationId;
+    }
     const invalidBaseUrl = this.completionsUrl && extractBaseURL(this.completionsUrl) === null;
     const useOldMethod = !!(invalidBaseUrl || !this.isChatCompletion);
     if (typeof opts.onProgress === 'function' && useOldMethod) {
