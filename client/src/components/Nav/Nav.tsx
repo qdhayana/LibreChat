@@ -80,14 +80,13 @@ const Nav = ({
   useEffect(() => {
     // When a tag is selected, refetch the list of conversations related to that tag
     refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tags]);
   const { containerRef, moveToTop } = useNavScrolling<ConversationListResponse>({
     setShowLoading,
     hasNextPage: searchQuery ? searchQueryRes?.hasNextPage : hasNextPage,
     fetchNextPage: searchQuery ? searchQueryRes?.fetchNextPage : fetchNextPage,
     isFetchingNextPage: searchQuery
-      ? searchQueryRes?.isFetchingNextPage ?? false
+      ? (searchQueryRes?.isFetchingNextPage ?? false)
       : isFetchingNextPage,
   });
 

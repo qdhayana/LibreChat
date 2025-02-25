@@ -2,7 +2,7 @@ import { useRecoilState } from 'recoil';
 import * as Select from '@ariakit/react/select';
 import { Fragment, useState, memo } from 'react';
 import { FileText, LogOut } from 'lucide-react';
-import { LinkIcon, GearIcon, DropdownMenuSeparator } from '~/components';
+import { LinkIcon, GearIcon, DropdownMenuSeparator, DataIcon, ExperimentIcon } from '~/components';
 import { useGetStartupConfig, useGetUserBalance } from '~/data-provider';
 import FilesView from '~/components/Chat/Input/Files/FilesView';
 import { useAuthContext } from '~/hooks/AuthContext';
@@ -101,6 +101,26 @@ function AccountSettings() {
           >
             <LinkIcon aria-hidden="true" />
             {localize('com_nav_help_faq')}
+          </Select.SelectItem>
+        )}
+        {startupConfig?.feedbackURL && (
+          <Select.SelectItem
+            value=""
+            onClick={() => window.open(startupConfig?.feedbackURL)}
+            className="select-item text-sm"
+          >
+            <DataIcon aria-hidden="true" />
+            {localize('com_nav_feedback')}
+          </Select.SelectItem>
+        )}
+        {startupConfig?.trainingURL && (
+          <Select.SelectItem
+            value=""
+            onClick={() => window.open(startupConfig?.trainingURL)}
+            className="select-item text-sm"
+          >
+            <ExperimentIcon aria-hidden="true" />
+            {localize('com_nav_training')}
           </Select.SelectItem>
         )}
         <Select.SelectItem

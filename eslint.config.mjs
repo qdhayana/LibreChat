@@ -208,7 +208,12 @@ export default [
     },
   },
   {
-    files: ['client/src/**/*.tsx', 'client/src/**/*.ts', 'client/src/**/*.jsx', 'client/src/**/*.js'],
+    files: [
+      'client/src/**/*.tsx',
+      'client/src/**/*.ts',
+      'client/src/**/*.jsx',
+      'client/src/**/*.js',
+    ],
     rules: {
       // Client a11y
       // TODO: maybe later to error.
@@ -282,16 +287,18 @@ export default [
       ecmaVersion: 5,
       sourceType: 'script',
       parserOptions: {
-        project: './client/tsconfig.json',
+        projectService: './client/tsconfig.json',
       },
     },
     rules: {
       // i18n
       'i18next/no-literal-string': [
-        'error', {
+        'error',
+        {
           mode: 'jsx-text-only',
           'should-validate-template': true,
-        }],
+        },
+      ],
       //
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': 'off',

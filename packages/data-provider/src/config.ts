@@ -503,6 +503,8 @@ export type TStartupConfig = {
   checkBalance: boolean;
   showBirthdayIcon: boolean;
   helpAndFaqURL: string;
+  feedbackURL: string;
+  trainingURL: string;
   customFooter?: string;
   modelSpecs?: TSpecsConfig;
   sharedLinksEnabled: boolean;

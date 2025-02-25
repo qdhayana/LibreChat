@@ -1,4 +1,3 @@
-/* eslint-disable jest/no-conditional-expect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // zod.spec.ts
 import { z } from 'zod';
