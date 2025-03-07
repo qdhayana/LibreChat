@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 // https://stackoverflow.com/a/67504622/51500
 import { DependencyList, EffectCallback, useCallback, useEffect, useRef } from 'react';
 import debounce from 'lodash/debounce';
