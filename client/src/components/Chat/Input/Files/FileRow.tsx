@@ -71,7 +71,6 @@ export default function FileRow({
     if (files.every((file) => file.progress === 1)) {
       setFilesLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files]);
 
   if (files.length === 0) {

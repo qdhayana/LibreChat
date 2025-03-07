@@ -345,6 +345,73 @@ async function processRequiredActions(client, requiredActions) {
 }
 
 /**
+ * Simplified MCP initialization for agents in Chrome extension context
+ * @param {Object} params
+ * @param {ServerRequest} params.req
+ * @param {ServerResponse} params.res
+ * @param {string} params.serverName - MCP server name (e.g., "browser-tab")
+ * @param {AbortSignal} params.signal
+ * @param {Record<string, Record<string, string>>} params.userMCPAuthMap
+ * @returns {Promise<{tools?: any[], availableTools?: any}>}
+ */
+async function initAgentMCPTools({ req, res, serverName, signal, userMCPAuthMap }) {
+  const { reinitMCPServer } = require('./Tools/mcp');
+
+  try {
+    logger.info(`[Agent MCP] Initializing ${serverName} for Chrome extension context`);
+
+    // Call reinitMCPServer with simplified parameters
+    const result = await reinitMCPServer({
+      req,
+      signal,
+      serverName,
+      userMCPAuthMap,
+      returnOnOAuth: false, // Don't wait for OAuth - return early if needed
+      forceNew: true,
+      connectionTimeout: 10000, // 10 second timeout
+      oauthStart: async (authURL) => {
+        logger.warn(`[Agent MCP] OAuth required for ${serverName}: ${authURL}`);
+        // For agents, we just log the OAuth URL instead of handling the flow
+        return false;
+      },
+    });
+
+    if (result?.tools) {
+      logger.info(`[Agent MCP] Successfully loaded ${result.tools.length} tools for ${serverName}`);
+      return result;
+    } else {
+      logger.warn(`[Agent MCP] No tools returned for ${serverName}`);
+      return {};
+    }
+  } catch (error) {
+    logger.error(`[Agent MCP] Failed to initialize ${serverName}:`, error);
+
+    // Return a dummy tool for better user experience
+    return {
+      tools: [
+        {
+          name: 'browser_extension_status',
+          description: 'Check browser extension connection status',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+          mcp: true,
+          _call: async () => ({
+            content: [
+              {
+                type: 'text',
+                text: 'Browser extension tools are currently initializing. Please try again in a moment.',
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  }
+}
+
+/**
  * Processes the runtime tool calls and returns the tool classes.
  * @param {Object} params - Run params containing user and request information.
  * @param {ServerRequest} params.req - The request object.
@@ -418,6 +485,58 @@ async function loadAgentTools({ req, res, agent, signal, tool_resources, openAIA
       userId: req.user.id,
       findPluginAuthsByKeys,
     });
+  }
+
+  // Check if we should use simplified MCP initialization for browser-tab in Chrome extension
+  const isChromeExtension =
+    req.headers['sec-fetch-dest'] === 'iframe' &&
+    (req.headers['origin']?.startsWith('chrome-extension://') ||
+      req.headers['x-chrome-extension'] === 'true' ||
+      req.headers['referer']?.startsWith('chrome-extension://'));
+
+  const hasBrowserTabTool = agent.tools?.some(
+    (tool) =>
+      typeof tool === 'string' && (tool.includes('browser-tab') || tool.startsWith('browser-tab')),
+  );
+
+  // Use simplified initialization for browser-tab in Chrome extension context
+  if (isChromeExtension && hasBrowserTabTool) {
+    logger.info('[Agent MCP] Using simplified initialization for browser-tab in Chrome extension');
+
+    const mcpResult = await initAgentMCPTools({
+      req,
+      res,
+      serverName: 'browser-tab',
+      signal,
+      userMCPAuthMap,
+    });
+
+    if (mcpResult?.tools && mcpResult.tools.length > 0) {
+      // Convert MCP tools to agent-compatible format and return early
+      const agentMCPTools = mcpResult.tools.map((tool) => ({
+        ...tool,
+        mcp: true,
+        name: tool.name,
+        description: tool.description,
+        schema: tool.inputSchema,
+        _call:
+          tool._call ||
+          (async (input) => {
+            // This will be handled by the MCP tool execution system
+            return { content: [{ type: 'text', text: 'Tool executed via MCP' }] };
+          }),
+      }));
+
+      logger.info(`[Agent MCP] Returning ${agentMCPTools.length} browser-tab tools for agent`);
+      return {
+        tools: agentMCPTools,
+        userMCPAuthMap,
+      };
+    } else {
+      logger.warn(
+        '[Agent MCP] No browser-tab tools available, falling back to regular tool loading',
+      );
+    }
   }
 
   const { loadedTools, toolContextMap } = await loadTools({

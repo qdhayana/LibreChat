@@ -543,6 +543,8 @@
   "com_nav_modular_chat": "Enable switching Endpoints mid-conversation",
   "com_nav_my_files": "My Files",
   "com_nav_not_supported": "Not Supported",
+  "com_nav_feedback": "Feedback",
+  "com_nav_training": "Training",
   "com_nav_open_sidebar": "Open sidebar",
   "com_nav_playback_rate": "Audio Playback Rate",
   "com_nav_plugin_auth_error": "There was an error attempting to authenticate this plugin. Please try again.",

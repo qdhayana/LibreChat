@@ -46,7 +46,6 @@ const useFileDeletion = ({
     [mutateAsync],
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedDelete = useCallback(debounce(executeBatchDelete, 1000), []);
 
   useEffect(() => {
