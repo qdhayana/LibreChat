@@ -22,7 +22,6 @@ export default function MultiMessage({
   useEffect(() => {
     // reset siblingIdx when the tree changes, mostly when a new message is submitting.
     setSiblingIdx(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messagesTree?.length]);
 
   useEffect(() => {
