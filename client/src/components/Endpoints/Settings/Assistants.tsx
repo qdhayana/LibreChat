@@ -83,7 +83,6 @@ export default function Settings({ conversation, setOption, models, readonly }: 
     }
 
     // Reason: `setOption` causes a re-render on every update
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assistantValue]);
 
   if (!conversation) {
