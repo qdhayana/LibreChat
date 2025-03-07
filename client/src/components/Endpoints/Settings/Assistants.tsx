@@ -83,7 +83,6 @@ export default function Settings({ conversation, setOption, models, readonly }: 
     }
 
     // Reason: `setOption` causes a re-render on every update
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assistantValue]);
 
   if (!conversation) {
@@ -161,7 +160,7 @@ export default function Settings({ conversation, setOption, models, readonly }: 
             placeholder={localize('com_endpoint_prompt_prefix_assistants_placeholder')}
             className={cn(
               defaultTextProps,
-              'flex max-h-[240px] min-h-[80px] w-full resize-none px-3 py-2 ',
+              'flex max-h-[240px] min-h-[80px] w-full resize-none px-3 py-2',
             )}
           />
         </div>
@@ -178,7 +177,7 @@ export default function Settings({ conversation, setOption, models, readonly }: 
             placeholder={localize('com_endpoint_instructions_assistants_placeholder')}
             className={cn(
               defaultTextProps,
-              'flex max-h-[240px] min-h-[80px] w-full resize-none px-3 py-2 ',
+              'flex max-h-[240px] min-h-[80px] w-full resize-none px-3 py-2',
             )}
           />
         </div>

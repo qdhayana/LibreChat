@@ -44,8 +44,8 @@ export default defineConfig({
       },
       includeAssets: ['**/*'],
       manifest: {
-        name: 'LibreChat',
-        short_name: 'LibreChat',
+        name: 'AYANA GPT',
+        short_name: 'AYANA GPT',
         start_url: '/',
         display: 'standalone',
         background_color: '#000000',
