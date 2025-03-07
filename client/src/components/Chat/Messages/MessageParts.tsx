@@ -89,15 +89,15 @@ export default function Message(props: TMessageProps) {
         onWheel={handleScroll}
         onTouchMove={handleScroll}
       >
-        <div className="m-auto justify-center p-4 py-2 md:gap-6">
-          <div
-            id={messageId}
-            aria-label={`message-${message.depth}-${messageId}`}
-            className={cn(baseClasses.common, baseClasses.chat, 'message-render')}
-          >
-            <div className="relative flex flex-shrink-0 flex-col items-center">
-              <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full pt-0.5">
-                <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
+        <div className="m-auto justify-center p-4 py-2 md:gap-6 ">
+          <div className="group mx-auto flex flex-1 gap-3 md:max-w-3xl md:px-5 lg:max-w-[40rem] lg:px-1 xl:max-w-[48rem] xl:px-5">
+            <div className="relative flex flex-shrink-0 flex-col items-end">
+              <div>
+                <div className="pt-0.5">
+                  <div className="shadow-stroke flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
+                    <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
+                  </div>
+                </div>
               </div>
             </div>
             <div

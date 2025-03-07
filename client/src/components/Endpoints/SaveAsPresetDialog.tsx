@@ -23,7 +23,7 @@ const SaveAsPresetDialog = ({ open, onOpenChange, preset }: TEditPresetProps) =>
     });
 
     const toastTitle =
-      _preset.title ?? '' ? `\`${_preset.title}\`` : localize('com_endpoint_preset_title');
+      (_preset.title ?? '') ? `\`${_preset.title}\`` : localize('com_endpoint_preset_title');
 
     createPresetMutation.mutate(_preset, {
       onSuccess: () => {
@@ -43,7 +43,6 @@ const SaveAsPresetDialog = ({ open, onOpenChange, preset }: TEditPresetProps) =>
 
   useEffect(() => {
     setTitle(preset.title ?? localize('com_endpoint_my_preset'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Handle Enter key press
@@ -76,7 +75,7 @@ const SaveAsPresetDialog = ({ open, onOpenChange, preset }: TEditPresetProps) =>
                 aria-label={localize('com_endpoint_preset_name')}
                 className={cn(
                   defaultTextProps,
-                  'flex h-10 max-h-10 w-full resize-none border-border-medium px-3 py-2 ',
+                  'flex h-10 max-h-10 w-full resize-none border-border-medium px-3 py-2',
                   removeFocusOutlines,
                 )}
               />
