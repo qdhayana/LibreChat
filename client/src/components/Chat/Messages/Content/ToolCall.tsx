@@ -11,6 +11,7 @@ import {
 import type { TAttachment, PartMetadata } from 'librechat-data-provider';
 import { useLocalize, useProgress, useExpandCollapse, useLazyCollapseBody } from '~/hooks';
 import { cn, getToolDisplayLabel, logger, openInNewTab } from '~/utils';
+import { isToolCallPreparing, useToolPreparation } from './preparation';
 import { ToolIcon, getToolIconType, isError } from './ToolOutput';
 import { useMCPIconMap, useMCPServerNames } from '~/hooks/MCP';
 import { resolveToolCallPhase } from '~/utils/toolCallPhase';
@@ -322,6 +323,19 @@ export default function ToolCall({
    *  the `tool_intents` capability); persists as the settled label —
    *  completion is a UI state, not a tense change. */
   const intent = useToolCallIntent(_args);
+  const preparationText = useToolPreparation();
+  const preparing = useMemo(
+    () =>
+      isToolCallPreparing({
+        args: _args,
+        output,
+        progress: initialProgress,
+        toolPreparationStartedAt,
+        toolDispatchedAt,
+        runStepStatus,
+      }),
+    [_args, output, initialProgress, toolPreparationStartedAt, toolDispatchedAt, runStepStatus],
+  );
   const subject = intent ?? displayFunctionName;
   let inProgressText =
     intent ??
@@ -330,8 +344,12 @@ export default function ToolCall({
       : localize('com_assistants_running_action'));
   if (toolDispatchedAt != null) {
     inProgressText = localize('com_ui_tool_calling', { 0: subject });
-  } else if (toolPreparationStartedAt != null) {
-    inProgressText = localize('com_ui_tool_preparing', { 0: subject });
+  } else if (preparing) {
+    inProgressText =
+      preparationText ??
+      (displayFunctionName
+        ? localize('com_ui_tool_preparing', { 0: displayFunctionName })
+        : localize('com_assistants_preparing_action'));
   }
 
   const getFinishedText = () => {
@@ -380,8 +398,8 @@ export default function ToolCall({
             if (toolDispatchedAt != null) {
               return localize('com_ui_tool_calling', { 0: displayFunctionName });
             }
-            if (toolPreparationStartedAt != null) {
-              return localize('com_ui_tool_preparing', { 0: displayFunctionName });
+            if (preparing) {
+              return inProgressText;
             }
             return displayFunctionName
               ? localize('com_assistants_running_var', { 0: displayFunctionName })
