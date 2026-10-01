@@ -2058,9 +2058,6 @@
   "client/src/components/UnifiedSidebar/mobile/BottomBar.tsx": {
     "shadcn/no-inline-styles": {
       "count": 1
-    },
-    "shadcn/no-restyle": {
-      "count": 4
     }
   },
   "client/src/components/UnifiedSidebar/mobile/Scrim.tsx": {
@@ -2068,7 +2065,7 @@
       "count": 2
     },
     "shadcn/no-restyle": {
-      "count": 4
+      "count": 1
     }
   },
   "client/src/components/Variables/Editor.tsx": {
