@@ -27,19 +27,6 @@
       "count": 3
     }
   },
-  "client/src/components/Agents/CopyLink.tsx": {
-    "shadcn/no-arbitrary-values": {
-      "count": 1
-    },
-    "shadcn/no-restyle": {
-      "count": 1
-    }
-  },
-  "client/src/components/Agents/GridSkeleton.tsx": {
-    "shadcn/no-restyle": {
-      "count": 7
-    }
-  },
   "client/src/components/Agents/Marketplace.tsx": {
     "shadcn/no-restyle": {
       "count": 1
@@ -50,19 +37,9 @@
       "count": 1
     }
   },
-  "client/src/components/Agents/MineFilterToggle.tsx": {
-    "shadcn/no-restyle": {
-      "count": 7
-    }
-  },
   "client/src/components/Agents/SearchBar.tsx": {
     "shadcn/no-restyle": {
       "count": 7
-    }
-  },
-  "client/src/components/Agents/SortDropdown.tsx": {
-    "shadcn/no-restyle": {
-      "count": 4
     }
   },
   "client/src/components/Agents/VirtualizedAgentGrid.tsx": {
@@ -2236,11 +2213,6 @@
     }
   },
   "packages/client/src/components/HoverCard.tsx": {
-    "shadcn/no-inline-styles": {
-      "count": 1
-    }
-  },
-  "packages/client/src/components/LoadingDots.tsx": {
     "shadcn/no-inline-styles": {
       "count": 1
     }

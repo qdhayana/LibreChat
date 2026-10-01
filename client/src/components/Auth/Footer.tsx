@@ -13,7 +13,7 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
 
   const privacyPolicyRender = privacyPolicyUrl != null && (
     <a
-      className="text-sm text-accent-primary underline decoration-transparent transition-all duration-200 hover:text-accent-primary-hover hover:decoration-accent-primary-hover focus:text-accent-primary-hover focus:decoration-accent-primary-hover"
+      className="text-accent-primary hover:text-accent-primary-hover hover:decoration-accent-primary-hover focus:text-accent-primary-hover focus:decoration-accent-primary-hover text-sm underline decoration-transparent transition-all duration-200"
       href={privacyPolicyUrl}
       // Removed for WCAG compliance
       // target={privacyPolicy.openNewTab ? '_blank' : undefined}
@@ -25,7 +25,7 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
 
   const termsOfServiceRender = termsOfServiceUrl != null && (
     <a
-      className="text-sm text-accent-primary underline decoration-transparent transition-all duration-200 hover:text-accent-primary-hover hover:decoration-accent-primary-hover focus:text-accent-primary-hover focus:decoration-accent-primary-hover"
+      className="text-accent-primary hover:text-accent-primary-hover hover:decoration-accent-primary-hover focus:text-accent-primary-hover focus:decoration-accent-primary-hover text-sm underline decoration-transparent transition-all duration-200"
       href={termsOfServiceUrl}
       // Removed for WCAG compliance
       // target={termsOfService.openNewTab ? '_blank' : undefined}
@@ -39,7 +39,7 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
     <div className="align-end m-4 flex justify-center gap-2" role="contentinfo">
       {privacyPolicyRender}
       {privacyPolicyRender && termsOfServiceRender && (
-        <div className="border-r-[1px] border-border-medium" />
+        <div className="border-border-medium border-r-[1px]" />
       )}
       {termsOfServiceRender}
     </div>

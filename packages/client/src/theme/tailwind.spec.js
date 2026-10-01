@@ -87,6 +87,13 @@ function tailwindDefault(variable) {
 }
 
 describe('LibreChat Tailwind preset', () => {
+  it('owns the loading-dot delay with a zero-delay fallback for plain preset consumers', async () => {
+    const css = await generate(['animate-loading-dot']);
+
+    expect(rule(css, 'animate-loading-dot')).toContain('var(--loading-dot-delay, 0ms)');
+    expect(rule(css, 'animate-loading-dot')).toContain('1.2s ease-in-out');
+  });
+
   it('generates every component animation and its keyframes together', async () => {
     const names = ['loading-dot', 'accordion-down', 'accordion-up', 'caret-blink'];
     const css = await generate(names.map((name) => `animate-${name}`));

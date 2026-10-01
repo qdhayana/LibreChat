@@ -81,7 +81,7 @@ export default function ChangeEmail() {
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <Label id="change-email-label">{localize('com_ui_settings_label_change_email')}</Label>
-          <p className="truncate text-xs text-text-secondary">{user?.email}</p>
+          <p className="text-text-secondary truncate text-xs">{user?.email}</p>
         </div>
         <OGDialogTrigger asChild>
           <Button aria-label={localize('com_ui_email_change_title')} variant="outline">
@@ -128,7 +128,7 @@ export default function ChangeEmail() {
             />
           </div>
           {errorKey && (
-            <p id="change-email-error" className="text-sm text-text-destructive" role="alert">
+            <p id="change-email-error" className="text-text-destructive text-sm" role="alert">
               {localize(errorKey)}
             </p>
           )}

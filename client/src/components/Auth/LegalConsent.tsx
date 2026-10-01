@@ -40,7 +40,7 @@ function LegalConsent({ startupConfig }: { startupConfig: TStartupConfig | null 
   }
 
   return (
-    <p className="mt-4 text-center text-sm font-light text-text-secondary">
+    <p className="text-text-secondary mt-4 text-center text-sm font-light">
       <Trans
         i18nKey={consentKey(privacyPolicyUrl, termsOfServiceUrl)}
         components={{

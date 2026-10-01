@@ -80,7 +80,8 @@ export default function CopyLink({ url, disabled = false }: CopyLinkProps) {
     <>
       <Button
         variant="outline"
-        className="min-w-0 px-3"
+        size="dense"
+        className="min-w-0"
         onClick={handleCopy}
         aria-disabled={disabled || undefined}
         aria-label={isCopied ? copiedLabel : idleLabel}
@@ -89,7 +90,7 @@ export default function CopyLink({ url, disabled = false }: CopyLinkProps) {
         <span
           aria-hidden="true"
           style={width == null ? undefined : { width }}
-          className="grid max-w-full overflow-hidden text-start transition-[width] duration-300 ease-out motion-reduce:transition-none"
+          className="grid max-w-full overflow-hidden text-start transition-all duration-300 ease-out motion-reduce:transition-none"
         >
           <span
             className={cn(

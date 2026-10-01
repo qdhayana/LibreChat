@@ -19,17 +19,17 @@ interface GridSkeletonProps {
 const card = (
   <>
     <div className="flex items-start justify-between gap-3">
-      <Skeleton className="size-12 rounded-full motion-reduce:animate-none sm:size-14" />
-      <Skeleton className="h-6 w-16 rounded-full motion-reduce:animate-none" />
+      <Skeleton className="size-12 rounded-full sm:size-14" />
+      <Skeleton className="h-6 w-16 rounded-full" />
     </div>
-    <Skeleton className="mt-4 h-6 w-3/4 motion-reduce:animate-none" />
+    <Skeleton className="mt-4 h-6 w-3/4" />
     <div className="mt-3 mb-5 space-y-2">
-      <Skeleton className="h-4 w-full motion-reduce:animate-none" />
-      <Skeleton className="h-4 w-5/6 motion-reduce:animate-none" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
     </div>
     <div className="border-border-light mt-auto flex justify-between gap-3 border-t pt-4">
-      <Skeleton className="h-4 w-24 motion-reduce:animate-none" />
-      <Skeleton className="h-4 w-20 motion-reduce:animate-none" />
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-4 w-20" />
     </div>
   </>
 );
@@ -92,7 +92,7 @@ export default function GridSkeleton({ scrollElementRef, label }: GridSkeletonPr
         {Array.from({ length: count }, (_, index) => (
           <div
             key={index}
-            className="rounded-theme-surface border-border-light bg-surface-secondary flex min-h-[17.5rem] min-w-0 flex-col border p-5"
+            className="border-border-light bg-surface-secondary rounded-theme-surface flex min-h-[17.5rem] min-w-0 flex-col border p-5"
           >
             {card}
           </div>

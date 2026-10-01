@@ -85,3 +85,32 @@ describe('Dropdown shape', () => {
     expect(trigger()).not.toHaveClass('rounded-theme-control-round');
   });
 });
+
+describe('Dropdown compact recipe', () => {
+  it('owns small-toolbar metrics without taking the selected value out of the accessible name', () => {
+    render(
+      <>
+        <span id="sort-label">Sort</span>
+        <Dropdown
+          value="12h"
+          options={OPTIONS}
+          aria-labelledby="sort-label"
+          variant="compact"
+          shape="default"
+          onChange={jest.fn()}
+        />
+      </>,
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Sort 12-hour' });
+    expect(trigger).toHaveClass(
+      'h-8',
+      'px-2.5',
+      'py-0',
+      'text-xs',
+      'transition-none',
+      'rounded-lg',
+    );
+    expect(trigger).not.toHaveClass('px-3', 'py-2', 'text-sm', 'transition-all');
+  });
+});

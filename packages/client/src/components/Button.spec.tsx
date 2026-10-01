@@ -10,6 +10,47 @@ jest.mock('react-i18next', () => ({
 }));
 
 describe('Button', () => {
+  it('owns dense action padding without changing the default-height recipe', () => {
+    render(
+      <Button variant="outline" size="dense">
+        Copy link
+      </Button>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Copy link' });
+    expect(button).toHaveClass('h-theme-button', 'px-3', 'py-2');
+    expect(button).not.toHaveClass('px-4');
+  });
+
+  it('owns compact filter geometry, immediate motion and semantic pressed-state fills', () => {
+    const { rerender } = render(
+      <Button variant="outline-toggle" size="compact" aria-pressed={false}>
+        My agents
+      </Button>,
+    );
+
+    const button = screen.getByRole('button', { name: 'My agents' });
+    expect(button).toHaveClass(
+      'h-8',
+      'gap-1.5',
+      'px-2.5',
+      'text-xs',
+      'transition-none',
+      'aria-pressed:border-border-heavy',
+      'aria-pressed:bg-surface-active-alt',
+      'aria-pressed:hover:bg-surface-active-alt',
+    );
+    expect(button).not.toHaveClass('gap-2', 'px-4', 'text-sm', 'h-theme-button');
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+
+    rerender(
+      <Button variant="outline-toggle" size="compact" aria-pressed>
+        My agents
+      </Button>,
+    );
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('exposes theme-owned shape and density recipes', () => {
     render(
       <Button size="theme" shape="theme">

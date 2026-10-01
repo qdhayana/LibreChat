@@ -28,8 +28,8 @@ interface DropdownProps {
   ariaLabel?: string;
   'aria-labelledby'?: string;
   portal?: boolean;
-  /** `field` matches the `Input` primitive so this can sit in a form row. */
-  variant?: 'default' | 'field';
+  /** `field` matches Input; `compact` supplies the small toolbar-control recipe. */
+  variant?: 'default' | 'field' | 'compact';
   /**
    * The trigger's corner, in `Button`'s vocabulary: `default` is `Button`'s own
    * `rounded-lg`, `theme` the theme's control radius, `round` its pill. Omitted,
@@ -173,6 +173,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           /** Horizontal padding would squeeze the icon, which flex-shrinks to fit */
           iconOnly ? 'size-10 justify-center px-0' : 'w-fit gap-2 px-3',
           variant === 'field' && fieldControl,
+          variant === 'compact' && 'h-8 px-2.5 py-0 text-xs transition-none',
           triggerClassName,
         )}
         data-testid={testId}

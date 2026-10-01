@@ -12,6 +12,7 @@ type ButtonVariantOptions =
         | 'link'
         | 'submit'
         | 'outline'
+        | 'outline-toggle'
         | 'choice'
         | 'subtle'
         | 'destructive'
@@ -28,6 +29,8 @@ type ButtonVariantOptions =
         | undefined;
       size?:
         | 'default'
+        | 'dense'
+        | 'compact'
         | 'icon'
         | 'icon-sm'
         | 'icon-xs'
@@ -58,6 +61,9 @@ const buttonVariantRecipe = cva(
           'bg-surface-destructive text-text-on-status hover:bg-surface-destructive-hover',
         outline:
           'text-text-primary border border-border-light bg-transparent hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary',
+        /** An outlined filter whose pressed state stays visible between activations. */
+        'outline-toggle':
+          'text-text-primary border border-border-light bg-transparent transition-none hover:bg-surface-hover hover:active:bg-surface-pressed hover:text-text-primary aria-pressed:border-border-heavy aria-pressed:bg-surface-active-alt aria-pressed:hover:bg-surface-active-alt',
         /**
          * A selectable answer inside a question card. `outline` is wrong here:
          * its `border-light` edge measures ~1.2:1 against the panel these sit
@@ -139,6 +145,10 @@ const buttonVariantRecipe = cva(
       },
       size: {
         default: 'h-theme-button px-4 py-2',
+        /** Default-height actions with less horizontal padding, such as Copy link. */
+        dense: 'h-theme-button px-3 py-2',
+        /** Compact text controls that share a toolbar row with a compact dropdown. */
+        compact: 'h-8 gap-1.5 px-2.5 py-2 text-xs',
         /**
          * A chip, the text counterpart of `icon-xs`: the reset beside a list that
          * matched nothing, and anything else that offers a way out without asking

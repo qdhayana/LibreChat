@@ -1,4 +1,4 @@
-import { JSX } from 'react/jsx-runtime';
+import type { CSSProperties, JSX } from 'react';
 import { cn } from '~/utils';
 
 /** Enough offset for the lift to travel around the row rather than pulse in unison. */
@@ -27,7 +27,7 @@ export function LoadingDots({ count = 3, className, ...props }: LoadingDotsProps
         <span
           key={index}
           className="animate-loading-dot size-1 rounded-full bg-current motion-reduce:animate-none motion-reduce:opacity-60"
-          style={{ animationDelay: `${index * DOT_STAGGER_MS}ms` }}
+          style={{ '--loading-dot-delay': `${index * DOT_STAGGER_MS}ms` } as CSSProperties}
         />
       ))}
     </span>
