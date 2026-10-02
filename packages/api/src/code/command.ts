@@ -65,17 +65,19 @@ export function stampCommandExecutor(
   }
 }
 
-export const ATTACHED_WORKSPACE_BASH_DESCRIPTION = `Runs bash commands inside the selected attached environment and returns stdout/stderr. Its workspace may be an existing project, Git repository, or empty directory.
+export const ATTACHED_WORKSPACE_BASH_DESCRIPTION = `Runs bash commands inside the selected attached environment and returns stdout/stderr. The workspace may be a project, Git repo, or empty directory.
 
 Session behavior:
-- This starts a new command, not an existing background task. Inspect a background_task_id with check_background_task when available; never send it to bash_tool.
-- Only registered-workspace files persist between calls. Install project dependencies there.
-- Every call is a fresh process. Shell and exported variables, cwd, /tmp, $TMPDIR, and background processes do not survive.
-- $HOME, global/system packages, and machine services are operator-managed. Do not change or rely on them as session storage.
-- Network access follows the sandbox policy configured on the worker and may be unavailable. File access follows the same worker policy.
-- Input code is already displayed to the user; do not repeat it unless asked.
+- Start a new command, not an existing task. Inspect background_task_id with check_background_task; never pass it here.
+- Only registered-workspace files persist. Install project dependencies there.
+- Every call is a fresh process. Shell state, exports, cwd, /tmp, $TMPDIR, and background processes do not survive.
+- Results show the starting workspace-relative directory, not the final directory. Scripts are not automatically rewritten.
+- Use cwd for directory-scoped commands; keep cd for shell state or root access.
+- $HOME, global/system packages, and services are operator-managed, not session storage.
+- Network access follows the sandbox policy; file access too. Network may be unavailable.
+- Input code is already displayed; do not repeat unless asked.
 - Explicitly print every result the user should see.
-- Never use this tool to execute malicious commands.`;
+- Never execute malicious commands.`;
 
 const bashSchema = BashExecutionToolDefinition.schema as {
   properties?: NonNullable<LCTool['parameters']>['properties'];
@@ -400,6 +402,7 @@ function formatCommandResult(
   result: WorkspaceExecuteCommandResult,
   timeoutMs: number,
   maxTimeoutMs: number,
+  cwd?: string,
 ): string {
   let output = '';
   if (result.stdout.length > 0) output += `stdout:\n${result.stdout}\n`;
@@ -412,7 +415,7 @@ function formatCommandResult(
   if (result.timedOut) {
     output += `\nCommand reached timeoutMs: ${timeoutMs}. Before retrying, check for partial side effects. Set timeoutMs explicitly up to ${maxTimeoutMs} milliseconds, or use run_in_background: true if available. Background execution uses the same timeout ceiling.`;
   }
-  return output;
+  return `[starting directory: ${JSON.stringify(`workspace/${cwd ?? ''}`)}]\n${output}`;
 }
 
 export function createAttachedWorkspaceBashTool({
@@ -549,7 +552,16 @@ export function createAttachedWorkspaceBashTool({
           throw new Error('Attached workspace returned an unexpected command result.');
         }
         logger.debug('[BYOMCommand] transport completed', trace);
-        return [formatCommandResult(result, timeoutMs, effectiveMaxTimeoutMs), {}];
+        let content = formatCommandResult(result, timeoutMs, effectiveMaxTimeoutMs, rawInput.cwd);
+        if (action === undefined && /^\s*cd(?:\s|$)/.test(rawInput.command!)) {
+          content +=
+            '\n[directory hint: For future commands scoped to a workspace subdirectory, pass cwd instead of a leading cd.' +
+            (linkedWorktrees
+              ? ' A cd inside the script does not select a linked-worktree lane.'
+              : '') +
+            ' Keep cd for scripts that depend on shell state or need root access. This command was not rewritten; do not rerun it just to change cwd.]';
+        }
+        return [content, {}];
       } finally {
         signal?.removeEventListener('abort', onAbort);
         logger.debug('[BYOMCommand] transport settled', {
