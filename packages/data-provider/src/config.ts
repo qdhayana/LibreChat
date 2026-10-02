@@ -33,6 +33,7 @@ import {
   MIN_BALANCE_RESERVATION_TTL_MS,
   DEFAULT_BALANCE_RESERVATION_TTL_MS,
 } from './balance';
+import { scheduledMCPResourceBindingSchema } from './types/scheduleConsent';
 
 export const AGENT_BACKGROUND_COMPLETION_RESULT_MAX_CHARS_DEFAULT = 24 * 1024;
 export const AGENT_BACKGROUND_COMPLETION_RESULT_MAX_CHARS_HARD_MAX = 64 * 1024;
@@ -2593,6 +2594,13 @@ export const interfaceSchema = z
           autoDisableAfterFailures: z.number().int().min(1).optional(),
           admissionConcurrency: z.number().int().min(1).max(100).optional(),
           fireConcurrency: z.number().int().min(1).optional(),
+          mcpConsent: z
+            .object({
+              enabled: z.boolean().optional(),
+              maxLifetimeHours: z.number().int().min(1).max(8760).optional(),
+              resources: z.record(scheduledMCPResourceBindingSchema).optional(),
+            })
+            .optional(),
           mcpPreflightConcurrency: z.number().int().min(1).max(10).optional(),
           mcpPreflightTimeoutMs: z.number().int().min(1000).max(600000).optional(),
           /** Refuse schedules that are not filed under a chat project. Enforced on
