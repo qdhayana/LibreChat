@@ -452,19 +452,32 @@ describe('resolveCodeExecutionWorkspaceContext', () => {
     expect(resolved.codeWorkspace?.environment).toEqual(environment);
   });
 
-  it.each(['source', 'isolated'] as const)(
-    'honors an explicit %s checkout choice',
-    async (checkout) => {
-      jest
-        .spyOn(globalThis, 'fetch')
-        .mockResolvedValue(
-          workspaceStatus([{ id: 'worktree', workspaceInstances: ['git_worktree'] }]),
-        );
+  it.each([
+    { checkout: 'source', linkedWorktrees: undefined, lanes: true },
+    { checkout: 'source', linkedWorktrees: true, lanes: true },
+    { checkout: 'source', linkedWorktrees: false, lanes: false },
+    { checkout: 'isolated', linkedWorktrees: undefined, lanes: false },
+    { checkout: 'isolated', linkedWorktrees: true, lanes: false },
+    { checkout: 'isolated', linkedWorktrees: false, lanes: false },
+  ] as const)(
+    'honors checkout $checkout with linkedWorktrees=$linkedWorktrees',
+    async ({ checkout, linkedWorktrees, lanes }) => {
+      jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+        workspaceStatus([
+          {
+            id: 'worktree',
+            workspaceInstances: ['git_worktree'],
+            workspaceScopes: ['git_linked_worktree'],
+          },
+        ]),
+      );
       const resolved = await resolveCodeExecutionWorkspaceContext({
         context: {
           ...context,
           conversationWorkspaceInstanceId: 'c'.repeat(64),
-          codeEnvironmentConfigSchema: { workspaces: { allowCheckoutSelection: true } },
+          codeEnvironmentConfigSchema: {
+            workspaces: { allowCheckoutSelection: true, linkedWorktrees },
+          },
         },
         requestedSelections: [{ environmentId: 'personal', workspaceId: 'worktree', checkout }],
         environments,
@@ -474,6 +487,7 @@ describe('resolveCodeExecutionWorkspaceContext', () => {
       expect(resolved.codeWorkspace?.workspaceInstanceId).toBe(
         checkout === 'isolated' ? 'c'.repeat(64) : undefined,
       );
+      expect(resolved.codeWorkspace?.linkedWorktrees).toBe(lanes ? true : undefined);
     },
   );
 
@@ -549,7 +563,7 @@ describe('resolveCodeExecutionWorkspaceContext', () => {
     expect(legacy.codeWorkspace).not.toHaveProperty('workspaceInstanceId');
   });
 
-  it('routes linked worktrees into lanes only when configured and no conversation instance owns the checkout', async () => {
+  it('routes linked worktrees into lanes unless disabled or a conversation instance owns the checkout', async () => {
     const workspaceInstanceId = 'c'.repeat(64);
     jest.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       workspaceStatus([
@@ -588,7 +602,7 @@ describe('resolveCodeExecutionWorkspaceContext', () => {
 
     expect(lanes.codeWorkspace?.linkedWorktrees).toBe(true);
     expect(disabled.codeWorkspace).not.toHaveProperty('linkedWorktrees');
-    expect(unconfigured.codeWorkspace).not.toHaveProperty('linkedWorktrees');
+    expect(unconfigured.codeWorkspace?.linkedWorktrees).toBe(true);
     expect(instance.codeWorkspace?.workspaceInstanceId).toBe(workspaceInstanceId);
     expect(instance.codeWorkspace).not.toHaveProperty('linkedWorktrees');
     expect(legacy.codeWorkspace).not.toHaveProperty('linkedWorktrees');
