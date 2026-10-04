@@ -470,7 +470,7 @@
       "count": 1
     },
     "shadcn/no-restyle": {
-      "count": 14
+      "count": 13
     }
   },
   "client/src/components/Chat/Messages/Content/Parts/Attachment.tsx": {
@@ -580,7 +580,7 @@
       "count": 1
     },
     "shadcn/no-restyle": {
-      "count": 18
+      "count": 17
     },
     "shadcn/require-static-classes": {
       "count": 1
@@ -695,7 +695,7 @@
       "count": 1
     },
     "shadcn/no-restyle": {
-      "count": 16
+      "count": 15
     }
   },
   "client/src/components/Chat/Messages/Content/animate.tsx": {
