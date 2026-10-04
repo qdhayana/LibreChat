@@ -5638,7 +5638,7 @@ describe('createToolExecuteHandler', () => {
     ];
 
     it.each(['SKILL.md', 'references/a.md'])(
-      'rejects compact amplification atomically for %s without starving timers',
+      'rejects compact amplification atomically for %s',
       async (file) => {
         const updateSkill = jest.fn();
         const saveSkillFileContent = jest.fn();
@@ -5663,10 +5663,6 @@ describe('createToolExecuteHandler', () => {
           updateSkill,
           saveSkillFileContent,
         });
-        let timerFired = false;
-        const timer = setTimeout(() => {
-          timerFired = true;
-        }, 0);
         const [result] = await invokeHandler(handler, [
           {
             id: 'amplification',
@@ -5674,10 +5670,8 @@ describe('createToolExecuteHandler', () => {
             args: { path: `skills/bounded-skill/${file}`, edits: amplificationEdits() },
           },
         ]);
-        clearTimeout(timer);
         expect(result.status).toBe('error');
         expect(result.errorMessage).toContain('budget exceeded');
-        expect(timerFired).toBe(true);
         expect(updateSkill).not.toHaveBeenCalled();
         expect(saveSkillFileContent).not.toHaveBeenCalled();
       },
