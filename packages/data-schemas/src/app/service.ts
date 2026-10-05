@@ -211,6 +211,7 @@ export const AppService = async (params?: {
     balance,
     skillSync,
     webSearch,
+    githubCompare: config.githubCompare,
     mcpSettings,
     mcpAppSandbox,
     fileStrategy,
