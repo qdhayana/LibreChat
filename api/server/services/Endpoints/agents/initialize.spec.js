@@ -250,6 +250,126 @@ describe('initializeClient — processAgent ACL gate', () => {
     });
   });
 
+  it.each([false, true])(
+    'binds the resource bearer host to the trusted root, restored=%s',
+    async (restored) => {
+      const {
+        getMCPRequestContext,
+        bindScheduledMCPBearerInvocation,
+        createScheduledMCPBearerHeaderResolver,
+        ScheduledMCPBearerError,
+      } = require('@librechat/api');
+      const receipts = jest
+        .spyOn(require('~/server/services/Schedules'), 'recordMCPToolAuthFailure')
+        .mockResolvedValue(true);
+      const boundaries = jest
+        .spyOn(require('~/server/services/Schedules'), 'registerMCPSettlement')
+        .mockImplementation(() => {});
+      const resolve = jest.fn(async (input) => input.config);
+      const bind = jest.fn((identity) => ({ identity, resolve, reject: jest.fn() }));
+      const host = createInitializeClient({ scheduledBearerHost: { bind } });
+      const req = makeReq();
+      req._resumableStreamId = 'notification-owner';
+      req._isScheduledFire = true;
+      req._isAgentTrigger = !restored;
+      req.body.agent_id = PRIMARY_ID;
+      req.body.agentTrigger = {
+        version: 1,
+        event: {
+          type: 'schedule.occurrence',
+          occurredAt: 0,
+          source: { type: 'schedule', id: 'sched-bearer' },
+        },
+      };
+      await db.createSchedule({
+        id: 'sched-bearer',
+        user: testUser._id,
+        agent_id: PRIMARY_ID,
+        name: 'Bearer',
+        prompt: 'Read',
+        cadence: { frequency: 'hourly', minute: 0, hour: 1 },
+        timezone: 'UTC',
+        enabled: true,
+      });
+      mockInitializeAgent.mockResolvedValue(makePrimaryConfig([]));
+      await host({
+        req,
+        res: {},
+        signal: new AbortController().signal,
+        endpointOption: makeEndpointOption(),
+        jobCreatedAt: 42,
+        scheduledTokenContext: restored
+          ? {
+              scheduleId: 'sched-bearer',
+              ownerId: req.user.id,
+              agentId: PRIMARY_ID,
+              invocationMode: 'delegated',
+            }
+          : undefined,
+      });
+      expect(bind).toHaveBeenCalledWith(
+        {
+          scheduleId: 'sched-bearer',
+          ownerId: req.user.id,
+          tenantId: null,
+          agentId: PRIMARY_ID,
+          invocationMode: 'delegated',
+        },
+        restored ? 'resume' : 'invoke',
+        expect.any(AbortSignal),
+        { manual: false },
+      );
+      const invocation = bindScheduledMCPBearerInvocation(
+        getMCPRequestContext(req),
+        'child',
+        'read',
+      );
+      const config = { type: 'streamable-http', url: 'https://resource.test/mcp' };
+      await invocation.resolve({ user: req.user, serverName: 'Files', config });
+      expect(resolve).toHaveBeenCalledWith(
+        expect.objectContaining({ selection: { agentId: 'child', tools: ['read'] }, config }),
+      );
+      const headers = createScheduledMCPBearerHeaderResolver({
+        context: getMCPRequestContext(req),
+        user: req.user,
+        serverName: 'Files',
+        config: {
+          ...config,
+          source: 'yaml',
+          headers: { Authorization: 'Bearer {{LIBRECHAT_OPENID_ACCESS_TOKEN}}' },
+        },
+      });
+      req.body.agent_id = 'forged';
+      req._resumableStreamId = 'forged-stream';
+      const failure = new ScheduledMCPBearerError('consent_revoked', 'Files');
+      await headers.recordFailure(failure);
+      expect(receipts).toHaveBeenCalledWith({
+        error: failure,
+        streamId: 'notification-owner',
+        jobCreatedAt: 42,
+        userId: req.user.id,
+        serverName: 'Files',
+        identity: {
+          scheduleId: 'sched-bearer',
+          ownerId: req.user.id,
+          tenantId: null,
+          agentId: PRIMARY_ID,
+          invocationMode: 'delegated',
+        },
+      });
+      await headers.settle();
+      expect(boundaries).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: 'notification-owner',
+          jobCreatedAt: 42,
+          quiesce: expect.any(Function),
+          identity: expect.objectContaining({ agentId: PRIMARY_ID, ownerId: req.user.id }),
+        }),
+      );
+      boundaries.mockRestore();
+      receipts.mockRestore();
+    },
+  );
   it('persists trusted completion lineage before initialization and rechecks it on authenticated resume', async () => {
     const { InMemoryJobStore, GenerationJobManager } = require('@librechat/api');
     const store = new InMemoryJobStore();
@@ -2677,6 +2797,7 @@ describe('initializeClient — subagent loading', () => {
   });
 
   it('omits a descriptor when its metadata lookup fails without aborting the primary run', async () => {
+    jest.spyOn(logger, 'error').mockImplementation(() => {});
     const primaryConfig = makePrimaryConfig({
       subagents: { enabled: true, allowSelf: false, agent_ids: [SUBAGENT_ID] },
     });

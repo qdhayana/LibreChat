@@ -2551,6 +2551,29 @@ describe('subagent activity policy', () => {
   });
 });
 
+it.each([
+  { baseMs: 100, maxMs: 1000 },
+  { baseMs: 1000, maxMs: 600_000 },
+])('accepts bounded MCP receipt retry policy %j', (mcpReceiptRetry) => {
+  expect(
+    configSchema.safeParse({
+      version: '1.2.1',
+      interface: { schedules: { use: true, mcpReceiptRetry } },
+    }).success,
+  ).toBe(true);
+});
+it.each([{ baseMs: 1 }, { maxMs: 600001 }, { baseMs: 1000, maxMs: 500 }])(
+  'rejects invalid MCP receipt retry policy %j',
+  (mcpReceiptRetry) => {
+    expect(
+      configSchema.safeParse({
+        version: '1.2.1',
+        interface: { schedules: { use: true, mcpReceiptRetry } },
+      }).success,
+    ).toBe(false);
+  },
+);
+
 describe('conversation title ownership rollout', () => {
   it('defaults running rename off and accepts only an explicit deployment opt-in', () => {
     expect(interfaceSchema.parse({}).runningChatRename).toBe(false);

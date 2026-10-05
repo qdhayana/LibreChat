@@ -48,6 +48,7 @@ const {
   encodeAndFormatVideos,
   extractFileContext,
   createScheduleUpstreamTokenProviderResolver,
+  initializeWithScheduledMCPBearer,
   initializeWithScheduleMCPExecution,
   retainScheduleMCPCompletion,
   getScheduleMCPExecution,
@@ -1985,6 +1986,7 @@ const initializeClientWithProvider = async ({
  *
  * @param {object} [dependencies]
  * @param {import('@librechat/api').HostUpstreamTokenProviderResolver} [dependencies.resolveUpstreamTokenProvider]
+ * @param {import('@librechat/api').ScheduledMCPBearerHost} [dependencies.scheduledBearerHost]
  */
 function createInitializeClient(dependencies = {}) {
   return async (params) => {
@@ -2006,7 +2008,23 @@ function createInitializeClient(dependencies = {}) {
         restoredJob: params.scheduleJobIdentity,
       },
       () => require('~/server/services/Schedules/consent'),
-      () => initializeClientWithProvider({ ...params, upstreamTokenProviderResolver }),
+      () =>
+        initializeWithScheduledMCPBearer(
+          {
+            req: params.req,
+            context: getMCPRequestContext(params.req),
+            restoredContext: params.scheduledTokenContext,
+            host: dependencies.scheduledBearerHost,
+            signal: params.signal,
+            streamId: params.req._resumableStreamId,
+            jobCreatedAt: params.jobCreatedAt,
+            recordFailure: (input) =>
+              require('~/server/services/Schedules').recordMCPToolAuthFailure(input),
+            registerSettlement: (input) =>
+              require('~/server/services/Schedules').registerMCPSettlement(input),
+          },
+          () => initializeClientWithProvider({ ...params, upstreamTokenProviderResolver }),
+        ),
       (identity) =>
         retainScheduleMCPCompletion(
           identity,
