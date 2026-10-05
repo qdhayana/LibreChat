@@ -63,6 +63,7 @@ import type { TerminalSteerHook } from '~/agents/steering/runtime';
 import type { LangfuseTraceContext } from '~/langfuse/identity';
 import type { ResolvedAlwaysApplySkill } from '~/agents/skills';
 import type { CodeExecutionContext } from '~/agents/execution';
+import type { SubagentCodeHostArgSpecs } from '~/code/targets';
 import type { MCPToolAlias } from '~/tools/classification';
 import type { ReviewedToolApprovals } from './hitl/modes';
 import type { SubagentUsageEvent } from '~/agents/usage';
@@ -75,6 +76,7 @@ import {
   collectNativeEditFileAgentIds,
   collectAttachedCodeEnvironmentAgentIds,
   collectAttachedCodeEnvironmentPolicySettings,
+  collectAttachedCodeApprovalPolicies,
   createAttachedCodeEnvironmentPolicyHook,
   resolveAttachedCodeApprovalMode,
 } from '~/agents/hitl/byom';
@@ -529,11 +531,20 @@ type LazySubagentAgent = Pick<
   | 'mcpToolAliases'
 > & {
   configId: string;
+  /** Per-call machine choices declared on the child's subagent call. */
+  subagentHostArgs?: SubagentCodeHostArgSpecs;
+  /** The routes behind those choices, for run-wide gates and approval bindings. */
+  codeExecutionChoices?: CodeExecutionContext[];
   subagentAgentConfigs?: RunAgent[];
   lazySubagentConfigs?: LazySubagentAgent[];
   /** Lightweight graph-member metadata used only by run-wide capability gates. */
   subagentGraphMemberMetadata?: SubagentTreeNode[];
   resolve: (context: SubagentResolveContext) => Promise<RunAgent>;
+  /**
+   * Wraps the whole selection, through the inputs handed to the SDK, so host state the
+   * call reserved is kept only when the child is actually exposed.
+   */
+  settle?: <T>(context: SubagentResolveContext, resolveInputs: () => Promise<T>) => Promise<T>;
 };
 
 type SubagentTreeNode = Pick<
@@ -551,6 +562,7 @@ type SubagentTreeNode = Pick<
   | 'includeReasoningHistory'
   | 'mcpToolAliases'
 > & {
+  codeExecutionChoices?: CodeExecutionContext[];
   subagentAgentConfigs?: SubagentTreeNode[];
   lazySubagentConfigs?: SubagentTreeNode[];
   subagentGraphMemberMetadata?: SubagentTreeNode[];
@@ -1619,7 +1631,44 @@ function createLazySubagentConfig(
   prebuiltGraphInputs?: ReadonlyMap<string, AgentInputs>,
   onResolvedAgent?: (agent: RunAgent) => void,
 ): SubagentConfig {
-  return {
+  const resolveInputs = async (context: SubagentResolveContext): Promise<AgentInputs> => {
+    if (context.signal.aborted) {
+      throw context.signal.reason ?? new Error('Subagent resolution was aborted.');
+    }
+    const resolvedChild = await child.resolve(context);
+    if (context.signal.aborted) {
+      throw context.signal.reason ?? new Error('Subagent resolution was aborted.');
+    }
+    onResolvedAgent?.(resolvedChild);
+    /** Graph members initialized with the child may run on its per-call machine. */
+    for (const graph of resolvedChild.subagentGraphConfigs ?? []) {
+      for (const member of graph.memberConfigs) {
+        onResolvedAgent?.(member);
+      }
+    }
+    const childInputs = buildIsolatedAgentInputs(resolvedChild, toInput);
+    const resolutionState: SubagentBuildState = {
+      configCount: 1,
+      rootAgentIds: [resolvedChild.id],
+    };
+    const grandchildConfigs = buildSubagentConfigs(
+      resolvedChild,
+      childInputs,
+      toInput,
+      resolutionState,
+      agentsEConfig,
+      ancestors,
+      depth,
+      prebuiltGraphInputs,
+      false,
+      onResolvedAgent,
+    );
+    if (grandchildConfigs.length > 0) {
+      childInputs.subagentConfigs = grandchildConfigs;
+    }
+    return childInputs;
+  };
+  const config: SubagentConfig = {
     type: child.id,
     name: child.name ?? child.id,
     description:
@@ -1628,38 +1677,15 @@ function createLazySubagentConfig(
     configId: child.configId,
     allowNested: true,
     maxTurns: resolveSubagentMaxTurns(agentsEConfig, child),
-    resolveAgentInputs: async (context) => {
-      if (context.signal.aborted) {
-        throw context.signal.reason ?? new Error('Subagent resolution was aborted.');
-      }
-      const resolvedChild = await child.resolve(context);
-      if (context.signal.aborted) {
-        throw context.signal.reason ?? new Error('Subagent resolution was aborted.');
-      }
-      onResolvedAgent?.(resolvedChild);
-      const childInputs = buildIsolatedAgentInputs(resolvedChild, toInput);
-      const resolutionState: SubagentBuildState = {
-        configCount: 1,
-        rootAgentIds: [resolvedChild.id],
-      };
-      const grandchildConfigs = buildSubagentConfigs(
-        resolvedChild,
-        childInputs,
-        toInput,
-        resolutionState,
-        agentsEConfig,
-        ancestors,
-        depth,
-        prebuiltGraphInputs,
-        false,
-        onResolvedAgent,
-      );
-      if (grandchildConfigs.length > 0) {
-        childInputs.subagentConfigs = grandchildConfigs;
-      }
-      return childInputs;
-    },
+    resolveAgentInputs: (context) =>
+      child.settle == null
+        ? resolveInputs(context)
+        : child.settle(context, () => resolveInputs(context)),
   };
+  /** Assigned rather than spread so the field typechecks against SDKs that predate it. */
+  return child.subagentHostArgs == null
+    ? config
+    : Object.assign(config, { hostArgs: child.subagentHostArgs });
 }
 
 function enqueueSubagentChildren(
@@ -1762,7 +1788,7 @@ function anyAgentHasCodeEnv(agents: RunAgent[]): boolean {
       continue;
     }
     visited.add(agent.id);
-    if (agent.codeEnvAvailable === true) {
+    if (agent.codeEnvAvailable === true || (agent.codeExecutionChoices?.length ?? 0) > 0) {
       return true;
     }
     enqueueSubagentChildren(agent, pending, visited);
@@ -2637,7 +2663,7 @@ export async function createRun({
   const attachedCodeEnvironmentSettings = collectAttachedCodeEnvironmentPolicySettings(agents);
   const codeApprovalMode = resolveAttachedCodeApprovalMode(
     requestedCodeApprovalMode,
-    attachedCodeEnvironmentSettings,
+    collectAttachedCodeApprovalPolicies(agents),
     agentsEndpointConfig?.toolApproval?.enabled !== false,
   );
   assertAttachedCodeEnvironmentApprovalSupported({
@@ -2853,6 +2879,11 @@ export async function createRun({
         settings: resolvedAgent.codeExecutionContext.codeEnvironmentSettings,
         skillAuthoringAvailable: resolvedAgent.skillAuthoringAvailable === true,
       });
+    } else {
+      /** A routable child counted as attached before its call chose a route; it resolved
+       *  off attached machines, and runs on that one route for the whole request. */
+      attachedCodeEnvironmentAgentIds.delete(resolvedAgent.id);
+      attachedCodeEnvironmentSettings.delete(resolvedAgent.id);
     }
     const discoveredAliases = collectRunMCPToolAliases([resolvedAgent]).filter(
       ({ name, aliasName }) => {
