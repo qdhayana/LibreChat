@@ -1,5 +1,13 @@
+import { ErrorTypes } from 'librechat-data-provider';
 import { SkillsScope } from 'librechat-data-provider';
-import { getLazySubagentConfigId } from './lazySubagents';
+import type { CodeExecutionContext } from './execution';
+import {
+  guardUnavailableSubagent,
+  getLazySubagentConfigId,
+  createViewableSubagentLoader,
+  resolveSubagentCodeAvailability,
+} from './lazySubagents';
+import { CodeWorkspaceSelectionError } from '~/code/errors';
 
 const agent = {
   id: 'child-agent',
@@ -119,5 +127,103 @@ describe('getLazySubagentConfigId', () => {
         skills_scope: SkillsScope.all,
       }),
     );
+  });
+});
+
+describe('createViewableSubagentLoader', () => {
+  it('reads and checks VIEW once per subagent, and hides what the principal cannot view', async () => {
+    const getAgent = jest.fn(async (id: string) => (id === 'missing' ? null : { id }));
+    const canView = jest.fn(async (candidate: { id: string }) => candidate.id !== 'hidden');
+    const load = createViewableSubagentLoader({ getAgent, canView });
+
+    await expect(Promise.all([load('child'), load('child')])).resolves.toEqual([
+      { id: 'child' },
+      { id: 'child' },
+    ]);
+    await expect(load('hidden')).resolves.toBeNull();
+    await expect(load('missing')).resolves.toBeNull();
+    expect(getAgent).toHaveBeenCalledTimes(3);
+    expect(canView).toHaveBeenCalledTimes(2);
+  });
+
+  it('shares a failed read with every caller', async () => {
+    const getAgent = jest.fn(async () => {
+      throw new Error('transient read');
+    });
+    const load = createViewableSubagentLoader({ getAgent, canView: async () => true });
+    await expect(load('child')).rejects.toThrow('transient read');
+    await expect(load('child')).rejects.toThrow('transient read');
+    expect(getAgent).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('subagent code availability', () => {
+  const context = { environmentId: 'vm', environmentType: 'attached' } as CodeExecutionContext;
+
+  it('keeps the resolved route when the workspace is usable', async () => {
+    await expect(
+      resolveSubagentCodeAvailability({
+        agentId: 'child',
+        codeEnvAvailable: true,
+        statefulCodeSessions: true,
+        resolveContext: async () => context,
+      }),
+    ).resolves.toEqual({
+      codeEnvAvailable: true,
+      statefulCodeSessions: true,
+      codeExecutionContext: context,
+    });
+  });
+
+  it('reports a missing workspace instead of throwing, and turns code off', async () => {
+    await expect(
+      resolveSubagentCodeAvailability({
+        agentId: 'child',
+        codeEnvAvailable: true,
+        statefulCodeSessions: true,
+        resolveContext: async () => {
+          throw new CodeWorkspaceSelectionError('required');
+        },
+      }),
+    ).resolves.toEqual({
+      codeEnvAvailable: false,
+      statefulCodeSessions: false,
+      codeWorkspaceUnavailable: 'required',
+    });
+  });
+
+  it.each([new CodeWorkspaceSelectionError('locked'), new Error('not configured')])(
+    'propagates %s',
+    async (error) => {
+      await expect(
+        resolveSubagentCodeAvailability({
+          agentId: 'child',
+          codeEnvAvailable: true,
+          statefulCodeSessions: true,
+          resolveContext: async () => {
+            throw error;
+          },
+        }),
+      ).rejects.toBe(error);
+    },
+  );
+
+  it('lists an unavailable subagent with the reason and never resolves it', async () => {
+    const resolve = jest.fn(async () => 'config');
+    const guarded = guardUnavailableSubagent({
+      description: 'Reviews PRs.',
+      codeWorkspaceUnavailable: 'missing',
+      resolve,
+    });
+    expect(guarded.description).toContain('Unavailable in this conversation');
+    await expect(guarded.resolve({})).rejects.toMatchObject({
+      code: ErrorTypes.CODE_WORKSPACE_UNAVAILABLE,
+      reason: 'missing',
+    });
+    expect(resolve).not.toHaveBeenCalled();
+    expect(guardUnavailableSubagent({ description: 'Reviews PRs.', resolve })).toEqual({
+      description: 'Reviews PRs.',
+      resolve,
+    });
   });
 });

@@ -24,11 +24,15 @@ const {
   buildAgentContextAttachmentsByAgentId,
   collectCodeExecutionProfileRoutes,
   getLazySubagentConfigId,
+  createViewableSubagentLoader,
   resolveCodeExecutionContext,
   resolveCodeExecutionWorkspaceSelections,
   optsOutOfAttachedCodeEnvironment,
   isImplicitStatefulCodeRouteAvailable,
   resolveCodeExecutionWorkspaceContext,
+  resolveSubagentCodeWorkspaceInheritance,
+  resolveSubagentCodeAvailability,
+  guardUnavailableSubagent,
   createStatefulCodeEnvironmentPolicyError,
   buildSubagentThreadTaskConfig,
   backgroundCompletionWakeupsEnabled,
@@ -1161,33 +1165,38 @@ const initializeClientWithProvider = async ({
     ) {
       throw createStatefulCodeEnvironmentPolicyError(statefulCodeEnvironment);
     }
-    const baseCodeExecutionContext = lazyCodeEnvAvailable
-      ? resolveCodeExecutionContext({
-          statefulSessions: statefulCodeSessions,
-          environment: statefulCodeEnvironment,
-          environmentId: agent.code_environment_id,
-          environmentIds: agent.code_environment_ids,
-          allowEnvironmentSelection:
-            appConfig.endpoints?.agents?.statefulCodeSessions?.allowEnvironmentSelection,
-          workspaceSelections: resolveCodeExecutionWorkspaceSelections({
-            conversation: admittedConversation,
-            request: runtimeRequestBody,
+    const codeAvailability = await resolveSubagentCodeAvailability({
+      agentId: agent.id,
+      codeEnvAvailable: lazyCodeEnvAvailable,
+      statefulCodeSessions,
+      resolveContext: async () => {
+        if (!lazyCodeEnvAvailable) return undefined;
+        return resolveCodeExecutionWorkspaceContext({
+          context: resolveCodeExecutionContext({
+            statefulSessions: statefulCodeSessions,
+            environment: statefulCodeEnvironment,
+            environmentId: agent.code_environment_id,
+            environmentIds: agent.code_environment_ids,
+            allowEnvironmentSelection:
+              appConfig.endpoints?.agents?.statefulCodeSessions?.allowEnvironmentSelection,
+            workspaceSelections: resolveCodeExecutionWorkspaceSelections({
+              conversation: admittedConversation,
+              request: runtimeRequestBody,
+            }),
+            inheritedEnvironments: req.codeWorkspaceInheritance,
+            environments: configuredCodeEnvironments,
+            userId,
+            agentId: agent.id,
+            conversationId,
           }),
-          environments: configuredCodeEnvironments,
-          userId,
-          agentId: agent.id,
-          conversationId,
-        })
-      : undefined;
-    const codeExecutionContext = baseCodeExecutionContext
-      ? await resolveCodeExecutionWorkspaceContext({
-          context: baseCodeExecutionContext,
           requestedSelections: runtimeRequestBody?.codeWorkspaces,
           persistedSelections: admittedConversation?.codeWorkspaces,
           environments: configuredCodeEnvironments,
           getAppConfig,
-        })
-      : undefined;
+        });
+      },
+    });
+    const { codeExecutionContext } = codeAvailability;
     const {
       alwaysApplySkillPrimes,
       historicalToolNames,
@@ -1212,10 +1221,8 @@ const initializeClientWithProvider = async ({
           memoryAvailable === true && agent.tools?.includes(Tools.memory) === true,
         subagents: agent.subagents,
         configId: getLazySubagentConfigId(agent),
-        codeEnvAvailable: lazyCodeEnvAvailable,
-        statefulCodeSessions,
+        ...codeAvailability,
         statefulCodeEnvironment,
-        codeExecutionContext,
         codeSessionKey: codeExecutionContext?.codeSessionKey,
         includeReasoningHistory: getIncludeReasoningHistory(agent),
         alwaysApplySkillPrimes,
@@ -1232,6 +1239,11 @@ const initializeClientWithProvider = async ({
     );
   };
 
+  const loadViewableSubagent = createViewableSubagentLoader({
+    getAgent: (agentId) => db.getAgentWithVersionCount({ id: agentId }),
+    canView: (agent, agentId) => hasSubagentViewAccess(agent, agentId),
+  });
+
   const loadSubagentMetadata = async (agentId) => {
     if (skippedAgentIds.has(agentId)) return null;
     const cached = lazyMetadataByAgentId.get(agentId);
@@ -1239,8 +1251,8 @@ const initializeClientWithProvider = async ({
     let loading = lazyMetadataLoadsByAgentId.get(agentId);
     if (!loading) {
       loading = resolveLazyMetadata(async () => {
-        const agent = await db.getAgentWithVersionCount({ id: agentId });
-        if (!agent || !(await hasSubagentViewAccess(agent, agentId))) {
+        const agent = await loadViewableSubagent(agentId);
+        if (!agent) {
           skippedAgentIds.add(agentId);
           return null;
         }
@@ -1504,18 +1516,22 @@ const initializeClientWithProvider = async ({
             lazySubagentConfigs: lazyChildren,
             subagentAgentConfigs: eagerChildren,
             subagentGraphMemberMetadata,
-            resolve: async (context) =>
-              initializeLazySubagent({
-                agentId: metadata.id,
-                configId: metadata.configId,
-                context,
-                lazyChildren,
-              }).then(async (config) => {
+            ...guardUnavailableSubagent({
+              description: metadata.description,
+              codeWorkspaceUnavailable: metadata.codeWorkspaceUnavailable,
+              resolve: async (context) => {
+                const config = await initializeLazySubagent({
+                  agentId: metadata.id,
+                  configId: metadata.configId,
+                  context,
+                  lazyChildren,
+                });
                 config.subagentAgentConfigs = eagerChildren;
                 graphMemberConfigsById.set(config.id, config);
                 await resolveGraphSubagentsFor(config, context.signal);
                 return config;
-              }),
+              },
+            }),
           },
           metadata,
         );
@@ -1539,6 +1555,21 @@ const initializeClientWithProvider = async ({
   };
 
   const rootSubagentConfigs = [primaryConfig, ...agentConfigs.values()];
+  const statefulCodeSessionsConfig =
+    appConfig?.endpoints?.[EModelEndpoint.agents]?.statefulCodeSessions;
+  req.codeWorkspaceInheritance = subagentsAvailableForRun
+    ? await resolveSubagentCodeWorkspaceInheritance({
+        selections: resolveCodeExecutionWorkspaceSelections({
+          conversation: admittedConversation,
+          request: runtimeRequestBody,
+        }),
+        roots: rootSubagentConfigs.filter((config) => config?.id),
+        loadSubagent: (agentId) => resolveLazyMetadata(() => loadViewableSubagent(agentId)),
+        environments: statefulCodeSessionsConfig?.environments,
+        allowEnvironmentSelection: statefulCodeSessionsConfig?.allowEnvironmentSelection,
+        codeExecutionAvailable: codeEnvAvailable === true && statefulSessionsAvailable === true,
+      })
+    : undefined;
   await resolveSubagentTrees(rootSubagentConfigs);
 
   const graphMemberConfigsById = new Map(
