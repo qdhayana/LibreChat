@@ -10,6 +10,22 @@ jest.mock('react-i18next', () => ({
 }));
 
 describe('Button', () => {
+  it('paints a destructive button solid and tints it only when the theme asks', () => {
+    const destructive = cn(buttonVariants({ variant: 'destructive' }));
+
+    expect(destructive).toContain('bg-surface-destructive');
+    expect(destructive).toContain('text-text-on-status');
+    expect(destructive).toContain('theme-destructive-soft:bg-surface-destructive/10');
+    expect(destructive).toContain('theme-destructive-soft:text-text-destructive');
+    // The ink stays at 4.5:1 over the light-theme tint only below a 20% hover and pressed share.
+    expect(destructive).toContain('theme-destructive-soft:hover:bg-surface-destructive/14');
+    expect(destructive).toContain('theme-destructive-soft:hover:active:bg-surface-destructive/17');
+  });
+
+  it('outlines a toggle in the control border', () => {
+    expect(cn(buttonVariants({ variant: 'outline-toggle' }))).toContain('border-border-control');
+  });
+
   it('outlines an icon button in the chrome border and a text button in the light one', () => {
     const icon = cn(buttonVariants({ variant: 'outline', size: 'icon-theme' }));
     const text = cn(buttonVariants({ variant: 'outline', size: 'dense' }));
