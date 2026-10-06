@@ -647,13 +647,10 @@ p > small {
 .prose :where(code):not(:where([class~='not-prose'] *)) {
   color: var(--tw-prose-code);
   font-size: 0.875em;
-  font-weight: 600;
-  background-color: rgb(var(--surface-active-alt));
+  font-weight: var(--theme-inline-code-weight, 600);
+  background-color: rgb(var(--surface-code-inline));
   padding: 0.125rem 0.25rem;
   border-radius: 0.35rem;
-}
-.dark .prose :where(code):not(:where([class~='not-prose'] *)):not(:where(pre *)) {
-  background-color: rgb(var(--surface-hover-alt));
 }
 .prose :where(a code):not(:where([class~='not-prose'] *)) {
   color: inherit;
@@ -755,7 +752,7 @@ p > small {
   --tw-prose-links: rgb(var(--link-prose));
   --tw-prose-bold: rgb(var(--text-primary));
   --tw-prose-counters: rgb(var(--text-tertiary));
-  --tw-prose-bullets: rgb(var(--border-medium));
+  --tw-prose-bullets: rgb(var(--prose-bullet));
   --tw-prose-hr: rgb(var(--border-medium));
   --tw-prose-quotes: rgb(var(--text-primary));
   --tw-prose-quote-borders: rgb(var(--border-light));
@@ -771,7 +768,7 @@ p > small {
   --tw-prose-invert-links: rgb(var(--link-prose));
   --tw-prose-invert-bold: rgb(var(--text-primary));
   --tw-prose-invert-counters: rgb(var(--text-tertiary));
-  --tw-prose-invert-bullets: rgb(var(--border-medium));
+  --tw-prose-invert-bullets: rgb(var(--prose-bullet));
   --tw-prose-invert-hr: rgb(var(--border-medium));
   --tw-prose-invert-quotes: rgb(var(--text-primary));
   --tw-prose-invert-quote-borders: rgb(var(--border-medium));
@@ -1238,7 +1235,7 @@ html[data-drawer-nav] body {
 
 .markdown blockquote {
   --tw-border-opacity: 1;
-  border-color: rgb(var(--border-medium));
+  border-color: rgb(var(--prose-quote-bar));
   border-left-width: 2px;
   line-height: 1rem;
   padding-left: 1rem;
@@ -1404,7 +1401,7 @@ html {
 }
 .markdown blockquote {
   --tw-border-opacity: 1;
-  border-color: rgb(var(--border-medium));
+  border-color: rgb(var(--prose-quote-bar));
   border-left-width: 2px;
   line-height: 1rem;
   padding-left: 1rem;

@@ -141,6 +141,9 @@ html {
   --surface-chat: var(--white);
   --surface-code: var(--surface-primary-alt);
   --surface-code-body: var(--surface-chat);
+  --surface-code-inline: var(--surface-active-alt);
+  --prose-bullet: var(--border-medium);
+  --prose-quote-bar: var(--border-medium);
   --surface-qr: var(--white);
   --border-light: var(--gray-200);
   --border-light-alpha: 1;
@@ -235,6 +238,10 @@ html {
   --theme-surface-radius: 1rem;
   --theme-large-surface-radius: 1.5rem;
   --theme-menu-radius: 0.7rem;
+  --theme-popover-radius: var(--theme-radius-2xl, 1rem);
+  --theme-menu-panel-radius: var(--theme-radius-xl, 0.75rem);
+  --theme-composer-action-radius: var(--theme-round-control-radius, 9999px);
+  --theme-inline-code-weight: 600;
   --theme-tooltip-radius: 0.275rem;
   --theme-tooltip-padding-x: 0.5rem;
   --theme-tooltip-padding-y: 0.25rem;
@@ -413,6 +420,9 @@ html {
   --surface-chat: var(--gray-700);
   --surface-code: var(--presentation);
   --surface-code-body: var(--surface-primary-alt);
+  --surface-code-inline: var(--surface-hover-alt);
+  --prose-bullet: var(--border-medium);
+  --prose-quote-bar: var(--border-medium);
   --surface-qr: var(--white);
   /* One step off the page instead of two: in dark the edge only has to separate
      a surface from the one behind it, and a brighter line reads as a seam. */
@@ -514,11 +524,14 @@ html {
 }
 
 /* A root other than the document one that a legacy palette themes (`THEME_SCOPE_ATTRIBUTE` in
-   utils/applyTheme.ts) keeps its avatar backdrop on its own surfaces, following the mode, as the
-   document root's alias above does. The layering roles alias their source the same way, so a
+   utils/applyTheme.ts) keeps its avatar backdrop, code chip, list marker and quote bar on its own surfaces,
+   following the mode, as the document root's aliases above do. The layering roles alias their source the same way, so a
    scoped palette that repaints the source moves them. An explicit role set inline still wins. */
 [data-theme-scope] {
   --avatar-placeholder: var(--surface-secondary);
+  --surface-code-inline: var(--surface-active-alt);
+  --prose-bullet: var(--border-medium);
+  --prose-quote-bar: var(--border-medium);
   --surface-canvas: var(--surface-primary-alt);
   --surface-user-message: var(--surface-tertiary);
   --surface-card: var(--surface-secondary);
@@ -547,4 +560,5 @@ html {
   --border-menu: var(--border-light);
   --surface-composer: var(--surface-chat);
   --surface-search: var(--surface-secondary);
+  --surface-code-inline: var(--surface-hover-alt);
 }
