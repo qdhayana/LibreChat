@@ -199,9 +199,8 @@ Verify with `git diff main ayana --stat`. Code changes are intentionally minimal
 |---|---|
 | Branding | Title/PWA name `AYANA GPT` in `client/index.html` (note: also still has upstream's `<title>LibreChat</title>`), `client/src/routes/Layouts/Startup.tsx` (fallback title), `client/vite.config.ts` (manifest `name`, `short_name`, `start_url: '/'`); root `index.html` is a standalone copy with the AYANA title |
 | Assets | `client/public/assets/`: new favicons/logo/maskable icons, `agent-ayana.png` (endpoint icon), and provider icons (`deepseek`, `grok`, `llama`, `mistral`, `perplexity`, `qwen`, `google`, `search-engine`) |
-| Legacy file | `api/server/controllers/ErrorController.js`: old Mongo validation/duplicate-key handler. **Unreferenced**; upstream imports `ErrorController` from `@librechat/api` |
-| Lint noise | Removed several `eslint-disable` comments in client hooks/components, `packages/client`, and `api/server/routes/types/assistants.js`. Drift, not intentional; on conflicts take upstream's side |
-| CI | Deleted most upstream `.github/workflows/*` and issue templates and all upstream-added workflows plus `.github/scripts`, `CODEOWNERS`, and `MAIN_PROMOTION.md`. On merge, resolve `modify/delete` conflicts as deleted and drop any newly added upstream CI files. Added `docker-build.yml`: on GitHub release, builds the root `Dockerfile` and pushes `ghcr.io/qdhayana/librechat:<tag>` and `:latest`. |
+| Legacy file | `api/server/controllers/ErrorController.js`: old Mongo validation/duplicate-key handler. **Unreferenced**; upstream imports `ErrorController` from `@librechat/api`. Candidate for removal |
+| CI | Deleted most upstream `.github/workflows/*` and issue templates and all upstream-added workflows plus `.github/scripts`, `CODEOWNERS`, and `MAIN_PROMOTION.md`. On merge, resolve `modify/delete` conflicts as deleted and drop any newly added upstream CI files. Kept upstream's `static-checks.yml` on purpose: the pre-commit hook reads it. Added `docker-build.yml`: on GitHub release, builds the root `Dockerfile` and pushes `ghcr.io/qdhayana/librechat:<tag>` and `:latest`. |
 | Misc | Root `robots.txt` (`Disallow: /`, keeps the app out of search engines) |
 
 ## Deployment and Local Config (gitignored, not in the repo)
