@@ -2,7 +2,30 @@ import type { Model, Types } from 'mongoose';
 import type { IAgentCategory } from '~/types';
 import { tenantSafeBulkWrite } from '~/utils/tenantBulkWrite';
 
-export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) {
+export function createAgentCategoryMethods(mongoose: typeof import('mongoose')): {
+  getActiveCategories: () => Promise<IAgentCategory[]>;
+  getCategoriesWithCounts: () => Promise<(IAgentCategory & { agentCount: number })[]>;
+  getValidCategoryValues: () => Promise<string[]>;
+  seedCategories: (
+    categories: Array<{
+      value: string;
+      label?: string;
+      description?: string;
+      order?: number;
+      custom?: boolean;
+    }>,
+  ) => Promise<import('mongoose').mongo.BulkWriteResult>;
+  findCategoryByValue: (value: string) => Promise<IAgentCategory | null>;
+  createCategory: (categoryData: Partial<IAgentCategory>) => Promise<IAgentCategory>;
+  updateCategory: (
+    value: string,
+    updateData: Partial<IAgentCategory>,
+  ) => Promise<IAgentCategory | null>;
+  deleteCategory: (value: string) => Promise<boolean>;
+  findCategoryById: (id: string | Types.ObjectId) => Promise<IAgentCategory | null>;
+  getAllCategories: () => Promise<IAgentCategory[]>;
+  ensureDefaultCategories: () => Promise<boolean>;
+} {
   /**
    * Get all active categories sorted by order
    * @returns Array of active categories
@@ -21,13 +44,15 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
   async function getCategoriesWithCounts(): Promise<(IAgentCategory & { agentCount: number })[]> {
     const Agent = mongoose.models.Agent;
 
-    const categoryCounts = await Agent.aggregate([
-      { $match: { category: { $exists: true, $ne: null } } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
+    const [categoryCounts, categories] = await Promise.all([
+      Agent.aggregate([
+        { $match: { category: { $exists: true, $ne: null } } },
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+      ]),
+      getActiveCategories(),
     ]);
 
     const countMap = new Map(categoryCounts.map((c) => [c._id, c.count]));
-    const categories = await getActiveCategories();
 
     return categories.map((category) => ({
       ...category,

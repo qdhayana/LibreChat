@@ -29,6 +29,11 @@ export interface RefreshTokenset {
   claims: () => AdminRefreshClaims;
 }
 
+export interface OpenIDRefreshParams {
+  scope?: string;
+  audience?: string;
+}
+
 export interface MintedToken {
   /** Bearer the admin panel will send on subsequent requests. */
   token: string;
@@ -60,6 +65,13 @@ export interface AdminRefreshDeps {
    * bearers should always inject this.
    */
   canAccessAdmin?: (user: IUser) => Promise<boolean>;
+  /**
+   * Re-runs the deployment's `registration.allowedDomains` check against the
+   * resolved user's email. Returns true to allow refresh, false to reject.
+   * Mirrors the domain check the initial OAuth callback enforces so a domain
+   * removed from the allowlist after issuance can't refresh.
+   */
+  isEmailAllowed?: (user: IUser) => Promise<boolean>;
   /**
    * Optional post-success hook for forks that need to do additional work
    * with the refreshed tokenset and resolved user (e.g. update a server-side
@@ -114,6 +126,52 @@ export class AdminRefreshError extends Error {
   }
 }
 
+export function buildOpenIDRefreshParams(): OpenIDRefreshParams {
+  const params: OpenIDRefreshParams = {};
+
+  if (process.env.OPENID_SCOPE) {
+    params.scope = process.env.OPENID_SCOPE;
+  }
+
+  if (process.env.OPENID_REFRESH_AUDIENCE) {
+    params.audience = process.env.OPENID_REFRESH_AUDIENCE;
+  }
+
+  return params;
+}
+
+function applyTenantFilter(
+  filter: FilterQuery<IUser>,
+  tenantId: string | undefined,
+): FilterQuery<IUser> {
+  return tenantId ? ({ ...filter, tenantId } as FilterQuery<IUser>) : filter;
+}
+
+async function findLatestAdminUser(
+  deps: AdminRefreshDeps,
+  filters: FilterQuery<IUser>[],
+  tenantId: string | undefined,
+): Promise<IUser | undefined> {
+  let latestUser: IUser | undefined;
+
+  for (const baseFilter of filters) {
+    const [user] = await deps.findUsers(
+      applyTenantFilter(baseFilter, tenantId),
+      SAFE_USER_PROJECTION,
+      {
+        sort: { updatedAt: -1 },
+        limit: 1,
+      },
+    );
+    if (!user) continue;
+    if (!latestUser || (user.updatedAt?.getTime() ?? 0) > (latestUser.updatedAt?.getTime() ?? 0)) {
+      latestUser = user;
+    }
+  }
+
+  return latestUser;
+}
+
 async function resolveAdminUser(
   deps: AdminRefreshDeps,
   openidId: string,
@@ -154,17 +212,10 @@ async function resolveAdminUser(
   }
 
   const issuerBound = getIssuerBoundConditions('openidId', openidId, normalizedIssuer);
-  const baseFilter: FilterQuery<IUser> =
-    issuerBound.length > 0 ? { $or: issuerBound } : ({ openidId } as FilterQuery<IUser>);
-  const filter: FilterQuery<IUser> = expectedTenantId
-    ? ({ ...baseFilter, tenantId: expectedTenantId } as FilterQuery<IUser>)
-    : baseFilter;
+  const filters =
+    issuerBound.length > 0 ? issuerBound : ([{ openidId }] as Array<FilterQuery<IUser>>);
 
-  const [user] = await deps.findUsers(filter, SAFE_USER_PROJECTION, {
-    sort: { updatedAt: -1 },
-    limit: 1,
-  });
-  return user;
+  return findLatestAdminUser(deps, filters, expectedTenantId);
 }
 
 function readClaims(tokenset: RefreshTokenset): AdminRefreshClaims {
@@ -229,6 +280,14 @@ export async function applyAdminRefresh(
   const user = await resolveAdminUser(deps, openidId, expected, options);
   if (!user) {
     throw new AdminRefreshError('USER_NOT_FOUND', 401, 'No user found for the refreshed identity');
+  }
+
+  if (deps.isEmailAllowed && !(await deps.isEmailAllowed(user))) {
+    throw new AdminRefreshError(
+      'FORBIDDEN',
+      403,
+      'User email domain is not on the deployment allowlist',
+    );
   }
 
   if (deps.canAccessAdmin && !(await deps.canAccessAdmin(user))) {

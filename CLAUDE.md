@@ -170,3 +170,55 @@ Multi-line imports count total character length across all lines. Consolidate va
 ## Formatting
 
 Fix all formatting lint errors (trailing spaces, tabs, newlines, indentation) using auto-fix when available. All TypeScript/ESLint warnings and errors **must** be resolved.
+
+---
+
+# AYANA Fork
+
+This repo is AYANA's fork of [danny-avila/LibreChat](https://github.com/danny-avila/LibreChat) (`origin` = `qdhayana/LibreChat`, `upstream` = `danny-avila/LibreChat`). The product is branded **AYANA GPT**.
+
+## Instruction Files
+
+- This `CLAUDE.md` is the **primary** source of project rules. The sections above are the LibreChat conventions we follow (workspaces, code style, testing, commands).
+- `AGENTS.md` is upstream's own, since-rewritten instruction file. Treat it as a **secondary reference**: read it for extra context, but if it conflicts with this file, `CLAUDE.md` wins.
+- Upstream gitignores `CLAUDE.md` and deleted its copy, so this file is tracked here with `git add -f`. Do not edit `AGENTS.md` for AYANA guidance, which keeps upstream syncs conflict-free.
+
+## Branch Model
+
+- `main` mirrors upstream; never commit AYANA changes to it.
+- `ayana` is the deployed branch: `main` plus one squashed customization commit (`adjustment`). Local `ayana-*` branches and `mcp-test` are old backups/experiments; ignore them.
+- Sync flow: update `main` from `upstream/main`, then merge `main` into `ayana` and resolve conflicts.
+- **Keep the fork delta small.** Prefer config (`librechat.yaml`, `.env`) over code edits. Every changed upstream file is a future merge conflict.
+- Version tags come from upstream (e.g. `v0.8.x`); `Dockerfile` carries the upstream version comment.
+
+## What `ayana` Changes vs `main`
+
+Verify with `git diff main ayana --stat`. Code changes are intentionally minimal:
+
+| Area | Change |
+|---|---|
+| Branding | Title/PWA name `AYANA GPT` in `client/index.html` (note: also still has upstream's `<title>LibreChat</title>`), `client/src/routes/Layouts/Startup.tsx` (fallback title), `client/vite.config.ts` (manifest `name`, `short_name`, `start_url: '/'`); root `index.html` is a standalone copy with the AYANA title |
+| Assets | `client/public/assets/`: new favicons/logo/maskable icons, `agent-ayana.png` (endpoint icon), and provider icons (`deepseek`, `grok`, `llama`, `mistral`, `perplexity`, `qwen`, `google`, `search-engine`) |
+| Legacy file | `api/server/controllers/ErrorController.js`: old Mongo validation/duplicate-key handler. **Unreferenced**; upstream imports `ErrorController` from `@librechat/api` |
+| Lint noise | Removed several `eslint-disable` comments in client hooks/components, `packages/client`, and `api/server/routes/types/assistants.js`. Drift, not intentional; on conflicts take upstream's side |
+| CI | Deleted most upstream `.github/workflows/*` and issue templates and all upstream-added workflows plus `.github/scripts`, `CODEOWNERS`, and `MAIN_PROMOTION.md`. On merge, resolve `modify/delete` conflicts as deleted and drop any newly added upstream CI files. Added `docker-build.yml`: on GitHub release, builds the root `Dockerfile` and pushes `ghcr.io/qdhayana/librechat:<tag>` and `:latest`. |
+| Misc | Root `robots.txt` (`Disallow: /`, keeps the app out of search engines) |
+
+## Deployment and Local Config (gitignored, not in the repo)
+
+- `librechat.yaml`, `.env`, `docker-compose.override.yml`, `data/`, `logs/`, `uploads/`, and `client/public/images/` are local/server files. Read them for context, but do not commit them.
+- **`librechat.yaml` contains plaintext secrets** (MCP `Authorization` headers and an API key). Never copy values from it into committed files, docs, PRs, or logs. Prefer `${ENV_VAR}` references.
+- `librechat.yaml` highlights:
+  - Auth: `registration.socialLogins: ['openid']`.
+  - Custom endpoints: `AYANA AI (Bali)`, `AYANA AI (Komodo)`, `AYANA AI (AYANA Rewards)` (all served from `https://ayana-ai.ayana.com/api/`, `iconURL: /assets/agent-ayana.png`, `fetch: false`, guest/`is_ops` params via `addParams.options`), plus an `Other models` endpoint through OpenRouter.
+  - MCP servers: `browser-tab`, `knowledge-engine`, `rewards-middleware`, `perplexity-ask`, `fetch`, `pdf-reader`.
+  - Also configures STT/TTS, Mistral OCR, Serper + Cohere web search, memory, and `filteredTools`.
+- Production runs from `deploy-compose.yml` (upstream base) layered with `docker-compose.override.yml` (AYANA: mounts `.env`, `librechat.yaml`, `/home/ubuntu/public`, uses a locally built `ayanagpt:<hash>` image, drops the bundled MongoDB in favour of `MONGO_URI`, exposes `3080` and the `8080` browser-tab WebSocket).
+- Branding is also driven at runtime by env vars (`APP_TITLE`, `HELP_AND_FAQ_URL`, ...), so check `.env` before changing code.
+
+## Working Rules for This Fork
+
+- Before touching an upstream file, ask whether the same result is achievable via `librechat.yaml`/`.env`. If code is needed, keep the edit small and localized, and add it to the table below.
+- New AYANA-only backend logic still follows the workspace rules above: TypeScript in `/packages/api`, with a thin wrapper in `/api` only if unavoidable.
+- When opening a PR, run `/review` and `/security-review` on the changes (organization requirement).
+- After syncing upstream, run `npm run smart-reinstall` and confirm `git diff main ayana --stat` still shows only the intended delta.
