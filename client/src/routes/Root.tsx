@@ -48,6 +48,7 @@ import useDrawerSwipe from '~/hooks/Nav/useDrawerSwipe';
 import ChatSettingsProvider from './ChatSettings';
 import { useHealthCheck } from '~/data-provider';
 import Settings from '~/components/Nav/Settings';
+import RekanAIPopup from '~/components/RekanAI';
 import { Banner } from '~/components/Banners';
 import store from '~/store';
 
@@ -183,6 +184,7 @@ function RootLayout() {
             <AgentsMapContext.Provider value={agentsMap}>
               <PromptGroupsProvider>
                 <Banner onHeightChange={setBannerHeight} />
+                <RekanAIPopup />
                 <div className="flex" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
                   <div
                     className="relative z-0 flex h-full w-full overflow-hidden"
