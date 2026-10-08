@@ -98,22 +98,21 @@ describe('AuthLayout legal placement', () => {
     expect(consent()).not.toBeInTheDocument();
   });
 
-  test('the login screen states it too', () => {
+  /** AYANA: the login screen shows the footer bar links, not the sentence. */
+  test('the login screen shows the footer bar instead of the consent', () => {
     setup({ pathname: 'login', socialLoginEnabled: true, interfaceConfig: policies });
 
-    expect(consent()).toBeInTheDocument();
+    expect(consent()).not.toBeInTheDocument();
     expect(document.querySelectorAll(`a[href="${PRIVACY_URL}"]`)).toHaveLength(1);
     expect(document.querySelectorAll(`a[href="${TERMS_URL}"]`)).toHaveLength(1);
-    expect(footerBar()).toBeNull();
+    expect(footerBar()).not.toBeNull();
   });
 
-  /** No provider button is needed for the screen to be a way in: a first LDAP
-   *  sign-in creates the account through this very form. */
-  test('a login screen with no provider button states it as well', () => {
+  test('a login screen with no provider button shows the footer bar too', () => {
     setup({ pathname: 'login', socialLoginEnabled: false, interfaceConfig: policies });
 
-    expect(consent()).toBeInTheDocument();
-    expect(footerBar()).toBeNull();
+    expect(consent()).not.toBeInTheDocument();
+    expect(footerBar()).not.toBeNull();
   });
 
   /** The second factor is not a way in of its own; the screen that sent the
@@ -156,13 +155,11 @@ describe('AuthLayout legal placement', () => {
     expect(footerBar()).not.toBeNull();
   });
 
-  /** The login screen states it itself, so a background refetch of an already
-   *  known config must not swap the sentence for the bar and back. */
-  test('the login screen keeps the consent across a background refetch', () => {
+  test('the login screen keeps the footer bar across a background refetch', () => {
     setup({ pathname: 'login', isFetching: true, interfaceConfig: policies });
 
-    expect(consent()).toBeInTheDocument();
-    expect(footerBar()).toBeNull();
+    expect(consent()).not.toBeInTheDocument();
+    expect(footerBar()).not.toBeNull();
   });
 
   /** A deployment that asks for explicit acceptance in a modal after sign-in

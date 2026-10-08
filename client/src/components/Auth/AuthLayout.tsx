@@ -5,7 +5,6 @@ import { hasPublishedPolicies } from '~/utils/policies';
 import { TranslationKeys, useLocalize } from '~/hooks';
 import SocialLoginRender from './SocialLoginRender';
 import { BlinkAnimation } from './BlinkAnimation';
-import LegalConsent from './LegalConsent';
 import { Banner } from '../Banners';
 import Footer from './Footer';
 import { cn } from '~/utils';
@@ -42,18 +41,12 @@ function AuthLayout({
    *  the footer bar linked, so a screen states them once. */
   const hasPolicies = hasPublishedPolicies(startupConfig);
   /** Registration states it under its own submit button, where it is read
-   *  before the account is created rather than below however many provider
-   *  buttons a deployment configured, and it renders that form only once the
-   *  config has loaded without error. The login screen has no submit button of
-   *  its own to sit under, so there the layout states it below the providers,
-   *  for as long as it knows the policies: a background refetch must not swap
-   *  the sentence for the bar and back. */
-  const registrationStatesConsent =
-    isRegister && hasPolicies && !hasStartupConfigError && !isFetching;
-  const statesConsentBelowProviders = isLogin && hasPolicies;
-  /** The bar is dropped exactly when the sentence is on the screen, so a
-   *  reader never meets both and never meets neither. */
-  const statesConsent = registrationStatesConsent || statesConsentBelowProviders;
+   *  before the account is created, and it renders that form only once the
+   *  config has loaded without error. AYANA: the login screen shows the
+   *  footer bar instead of the sentence. The bar is dropped exactly when the
+   *  sentence is on the screen, so a reader never meets both and never meets
+   *  neither. */
+  const statesConsent = isRegister && hasPolicies && !hasStartupConfigError && !isFetching;
   const isTwoFactorSetup = pathname === '/login/2fa/setup';
   const DisplayError = () => {
     if (hasStartupConfigError) {
@@ -123,7 +116,6 @@ function AuthLayout({
           {showsSocialLogin && (
             <SocialLoginRender startupConfig={startupConfig} showPasskey={isLogin} />
           )}
-          {statesConsentBelowProviders && <LegalConsent startupConfig={startupConfig} />}
         </div>
       </main>
       {!statesConsent && <Footer startupConfig={startupConfig} />}
