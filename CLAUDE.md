@@ -211,7 +211,8 @@ Verify with `git diff main ayana --stat`. Code changes are intentionally minimal
 - **`librechat.yaml` contains plaintext secrets** (MCP `Authorization` headers and an API key). Never copy values from it into committed files, docs, PRs, or logs. Prefer `${ENV_VAR}` references.
 - `librechat.yaml` highlights:
   - Auth: `registration.socialLogins: ['openid']`.
-  - Custom endpoints: `AYANA AI (Bali)`, `AYANA AI (Komodo)`, `AYANA AI (AYANA Rewards)` (all served from `https://ayana-ai.ayana.com/api/`, `iconURL: /assets/agent-ayana.png`, `fetch: false`, guest/`is_ops` params via `addParams.options`), plus an `Other models` endpoint through OpenRouter.
+  - Custom endpoints: `AYANA AI (Bali)`, `AYANA AI (Komodo)`, `AYANA AI (Jakarta)(beta)`, `AYANA AI (AYANA Rewards)` (all served from `https://ayana-ai.ayana.com/api/`, `iconURL: /assets/agent-ayana.png`, `fetch: false`, guest/`is_ops` params via `addParams.options`), plus an `Other models` endpoint through OpenRouter.
+  - Every `AYANA AI (...)` endpoint must set `apiKey: '${AYANA_AI_CHAT_API_KEY}'`, with the value in `.env`. ayana-ai checks it on `/api/chat/completions` as this app's caller key (its `CHAT_API_KEYS`, qdhayana/ayana-ai-platform#266), and title generation goes through the same endpoints, so it carries the key too. LibreChat expands the reference in `packages/api/src/endpoints/custom/initialize.ts`; never write the value into `librechat.yaml` itself.
   - MCP servers: `browser-tab`, `knowledge-engine`, `rewards-middleware`, `perplexity-ask`, `fetch`, `pdf-reader`.
   - Also configures STT/TTS, Mistral OCR, Serper + Cohere web search, memory, and `filteredTools`.
 - Production runs from `deploy-compose.yml` (upstream base) layered with `docker-compose.override.yml` (AYANA: mounts `.env`, `librechat.yaml`, `/home/ubuntu/public`, uses a locally built `ayanagpt:<hash>` image, drops the bundled MongoDB in favour of `MONGO_URI`, exposes `3080` and the `8080` browser-tab WebSocket).
